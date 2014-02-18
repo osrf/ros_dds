@@ -1,0 +1,30 @@
+/*
+ *                         OpenSplice DDS
+ *
+ *   This software and documentation are Copyright 2006 to 2013 PrismTech
+ *   Limited and its licensees. All rights reserved. See file:
+ *
+ *                     $OSPL_HOME/LICENSE
+ *
+ *   for full copyright notice and license terms.
+ *
+ */
+
+/************************************************************************
+ * LOGICAL_NAME:    StringMsg.idl
+ * FUNCTION:        Sends a string.
+ ************************************************************************
+ *
+ * This file contains the data definitions for the topic data type.
+ *
+ ***/
+
+module StringMsg {
+
+    struct StringMessage {
+        long      msgID;           // ID of message
+        string    content;         // message body
+    };
+#pragma keylist StringMessage msgID
+
+};
