@@ -2,6 +2,7 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include "dds_robot.hh"
 
@@ -123,6 +124,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < numMessages; ++i)
   {
     node.Publish(topic, data);
+    usleep(10000);
   }
 
   // Zzzzzz Zzzzzz
