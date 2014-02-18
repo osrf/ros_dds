@@ -1,17 +1,14 @@
-ros_dds
-=======
+# ros_dds
 
 Prototype system using DDS as the middleware for a ROS like API.
 
-System requirements
--------------------
+## System requirements
 
 You need to install OpenSplice.  For now, we're only concerned with the C++
 bindings (both API and message generation); the other languages supported by
 OpenSplice are excluded by these installation instructions.
 
-Ubuntu Linux
-^^^^^^^^^^^^
+### Ubuntu Linux
 
 At the time of writing, we have packaged OpenSplice 6.3 for 64-bit Ubuntu
 Precise, Quantal, and Raring.  To install on one of those systems, you need to
@@ -19,20 +16,18 @@ add the OSRF apt repo to your system then install `libopensplice63`:
 
 ~~~
 # Add the appropriate apt repo (substitute `precise` for the right value):
-sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu precise main" > /etc/apt/sources.list.d/gazebo-latest.list'
+sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu precise main" >  /etc/apt/sources.list.d/gazebo-latest.list'
 # Update your list of packages
 sudo apt-get update
 # Install opensplice
 sudo apt-get install libopensplice63
 ~~~
 
-Mac OSX
-^^^^^^^
+### Mac OSX
 
 TODO
 
-Generic build from source
-^^^^^^^^^^^^^^^^^^^^^^^^^
+### Generic build from source
 
 Clone our fork of opensplice, then use our hacky wrapper for their oddball build
 system to produce a tarball that you can drop somewhere and build against:
@@ -58,5 +53,4 @@ tar xf $HOME/code/opensplice/install/minimal/opensplice-minimal.tgz
 export CMAKE_PREFIX_PATH=/tmp/opensplice:$CMAKE_PREFIX_PATH
 ~~~
 
-Talker / listener example
--------------------------
+## Talker / listener example
