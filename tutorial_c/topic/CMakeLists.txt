@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(topic)
 
-find_package(opensplice REQUIRED)
-# find_package only exposes the c++ include directories but not the c headers
-include_directories(c /usr/include/opensplice/dcps/C/SAC ${OPENSPLICE_INCLUDE_DIRS})
-link_directories(${OPENSPLICE_LIBRARY_DIRS})
+find_package(opensplice REQUIRED COMPONENTS C)
 
-add_executable(topic main.cc c/ChatSacDcps.c c/ChatSplDcps.c)
+include_directories(${OPENSPLICE_INCLUDE_DIRS})
+
+ospl_add_idl(Chat.idl)
+add_executable(topic main.c)
 target_link_libraries(topic ${OPENSPLICE_LIBRARIES})

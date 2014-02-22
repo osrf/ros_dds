@@ -3,8 +3,8 @@ project(ros_dds)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(opensplice REQUIRED)
-include_directories(cpp ${OPENSPLICE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-link_directories(${OPENSPLICE_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
+include_directories(${OPENSPLICE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 ospl_add_idl(idl/StringMsg.idl)
 
