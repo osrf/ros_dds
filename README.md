@@ -29,29 +29,17 @@ TODO
 
 ### Generic build from source
 
-Clone our fork of opensplice, then use our hacky wrapper for their oddball build
-system to produce a tarball that you can drop somewhere and build against:
+Clone our fork of opensplice, then use our CMake wrapper around their oddball build system:
 
 ~~~
-# Install build-time prerequisites
+# Install build-time prerequisites, which on Linux are:
 # (see http://www.prismtech.com/opensplice/opensplice-dds-community/building for the full list)
 sudo apt-get install gawk flex bison perl
 git clone https://github.com/osrf/opensplice.git
-cd opensplice
-# When prompted by the following script, pick the build type that looks good to you
-./minimal_build.sh
-~~~
-
-The script will tell you about a tarball that contains a minimal build of
-OpenSplice (just C++ support).  Say that the tarball is called
-`$HOME/code/opensplice/install/minimal/opensplice-minimal.tgz`; then to install and use it:
-
-~~~
-# Make a directory to contain the unpacked tarball (it doesn't have a single
-# top-level directory).
-mkdir /tmp/opensplice
-cd /tmp/opensplice
-tar xf $HOME/code/opensplice/install/minimal/opensplice-minimal.tgz
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/tmp/opensplice
+make install
 # Tell CMake to look there for CMake configuration files
 export CMAKE_PREFIX_PATH=/tmp/opensplice:$CMAKE_PREFIX_PATH
 ~~~
