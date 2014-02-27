@@ -1,0 +1,25 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"sublimeclang_options":
+		[
+			"-I/usr/include",
+			"-I/usr/local/include",
+			"-I/usr/local/include/opensplice",
+			"-I/usr/local/include/opensplice/sys",
+			"-I/usr/local/include/opensplice/dcps/C++/SACPP",
+			"-I${folder:${project_path:ros_dds.sublime-project}}/cpp/build/idl/cpp",
+			"-I${folder:${project_path:ros_dds.sublime-project}}/large_message_cpp/build/idl/cpp",
+			"-I${folder:${project_path:ros_dds.sublime-project}}/large_message_cpp/build/devel/include",
+			"-I/opt/ros/hydro/include",
+			"-I/Users/william/hydro/install/include"
+		]
+	}
+}

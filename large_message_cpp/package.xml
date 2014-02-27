@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+  <name>large_message_cpp</name>
+  <version>0.0.0</version>
+  <description>The large_message_cpp package</description>
+
+  <maintainer email="william@todo.todo">william</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+
+</package>
