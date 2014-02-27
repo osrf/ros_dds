@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
     DDS::TopicQos default_topic_qos;
     status = participant->get_default_topic_qos(default_topic_qos);
     checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
-    default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
+    default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
+    // default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
 
     /* Register the LargeMessage Type */
     LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
     /* Send some large messages */
     std::cout << "Sending LargeMessage's" << std::endl;
     LargeMsg::LargeMessage * msg;
-    for (int scale = 8; scale < 24; scale += 2)
+    for (int scale = 16; scale < 29; scale += 2)
     {
         for (int i = 0; i < 10; ++i)
         {
@@ -89,13 +90,14 @@ int main(int argc, char *argv[])
             status = data_writer->write(*msg, instance_handle);
             checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 
-            sleep(1);
+            usleep(100000);
 
             delete msg;
         }
     }
 
-    std::cout << "Press any key to exit" << std::endl;
+    std::cout << "Finished" << std::endl;
+
     getchar();
 
     /* Shutdown */

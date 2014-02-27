@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
 
-    ros::Publisher chatter_pub = n.advertise<large_message_cpp::LargeMessage>("big_chatter", 0);
+    ros::Publisher chatter_pub = n.advertise<large_message_cpp::LargeMessage>("big_chatter", 1);
 
     ROS_INFO("Sending data...");
     for (int scale = 16; scale < 29; scale += 2)

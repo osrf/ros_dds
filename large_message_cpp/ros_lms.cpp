@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
 
-    ros::Subscriber sub = n.subscribe("big_chatter", 0, cb);
+    ros::Subscriber sub = n.subscribe("big_chatter", 1, cb);
 
     ros::spin();
 

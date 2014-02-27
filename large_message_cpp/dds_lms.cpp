@@ -43,7 +43,8 @@ int main(int argc, char *argv[])
     DDS::TopicQos default_topic_qos;
     status = participant->get_default_topic_qos(default_topic_qos);
     checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
-    default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
+    default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
+    // default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
 
     /* Register the LargeMessage Type */
     LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
