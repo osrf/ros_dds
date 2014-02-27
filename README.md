@@ -17,6 +17,8 @@ add the OSRF apt repo to your system then install `libopensplice63`:
 ~~~
 # Add the appropriate apt repo (substitute `precise` for the right value):
 sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu precise main" >  /etc/apt/sources.list.d/gazebo-latest.list'
+# Add the osrfoundation.org package repository key
+wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
 # Update your list of packages
 sudo apt-get update
 # Install opensplice
@@ -25,7 +27,20 @@ sudo apt-get install libopensplice63
 
 ### Mac OSX
 
-TODO
+#### Homebrew
+
+Assuming you have Homebrew installed already, you can do this to get opensplice:
+
+```
+brew tap osrf/ros2
+brew install opensplice
+```
+
+The above should download and "pour" a binary bottle on OS X 10.8 and 10.9. You can, however, build it with debug symbols like this:
+
+```
+brew install --with-debug opensplice
+```
 
 ### Generic build from source
 
