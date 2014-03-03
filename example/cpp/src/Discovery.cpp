@@ -30,13 +30,38 @@ int OSPL_MAIN (int argc, char *argv[]) {
         STATUS_MASK_NONE);
     checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
 
-    while (!terminated) {
-        DDS::InstanceHandleSeq participant_handles;
+    Subscriber *builtinSubscriber = participant->get_builtin_subscriber();
+    checkHandle(builtinSubscriber, "DDS::DomainParticipant::get_builtin_subscriber");
+ 
+    ParticipantBuiltinTopicDataDataReader_var participantsDR = ParticipantBuiltinTopicDataDataReader::_narrow(
+        builtinSubscriber->lookup_datareader("DCPSParticipant"));
+    checkHandle(participantsDR.in(), "DCPSParticipant");
 
-        status = participant->get_discovered_participants(participant_handles);
+    while(!terminated) {
+        ParticipantBuiltinTopicDataSeq_var participantDataSeq = new ParticipantBuiltinTopicDataSeq();
+        SampleInfoSeq_var infoSeq = new SampleInfoSeq();
+        participantsDR->take(participantDataSeq, infoSeq, LENGTH_UNLIMITED,
+            ANY_SAMPLE_STATE, ANY_VIEW_STATE, ANY_INSTANCE_STATE); //ALIVE_INSTANCE_STATE);
 
-        std::cout << "Number of participants in the domain: " << participant_handles.length() << std::endl;
+        for(int i = 0; i < infoSeq->length(); ++i) {
+            ParticipantBuiltinTopicData_var participantData = participantDataSeq[i];
+            SampleInfo_var info = infoSeq[i];
 
+            switch(info->instance_state) {
+                case ALIVE_INSTANCE_STATE:
+                    std::cout << "New participant joined" << std::endl;
+                    std::cout << "NodeID: " << participantData->key[0] << std::endl;
+                    break;
+                case NOT_ALIVE_DISPOSED_INSTANCE_STATE:
+                    std::cout << "Participant deleted" << std::endl;
+                    break;
+                case NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
+                    std::cout << "Participant unreachable" << std::endl;
+                    break;
+                default:
+                    std::cout << "Unknown instance state: " << info->instance_state << std::endl;
+            }
+        }
         usleep(100000);
     }
 
