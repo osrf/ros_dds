@@ -47,16 +47,35 @@ int OSPL_MAIN (int argc, char *argv[]) {
             ParticipantBuiltinTopicData_var participantData = participantDataSeq[i];
             SampleInfo_var info = infoSeq[i];
 
+            String hostname;
+
             switch(info->instance_state) {
                 case ALIVE_INSTANCE_STATE:
                     std::cout << "New participant joined" << std::endl;
                     std::cout << "NodeID: " << participantData->key[0] << std::endl;
+                    // I still don't know what these keys are for
+                    std::cout << "Key[1]: " << participantData->key[1] << std::endl;
+                    std::cout << "Key[2]: " << participantData->key[2] << std::endl;
+                    // Hostname is stored in the user_data field, maybe we can use this
+                    // to distinguish between participants that represent the processes
+                    // and the built-in participants. The second key can also be used to
+                    // identify participant processes (value 0x30, don't know what it
+                    // means but it's always 0x30 when there's data in user_data)
+                    if(participantData->user_data.value.length() > 0) {
+                        hostname = string_alloc(participantData->user_data.value.length());
+                        memcpy(hostname, participantData->user_data.value.get_buffer(),
+                            participantData->user_data.value.length());
+                        hostname[participantData->user_data.value.length()] = '\0';
+                        std::cout << "Host name: " << hostname << std::endl;
+                    }
                     break;
                 case NOT_ALIVE_DISPOSED_INSTANCE_STATE:
                     std::cout << "Participant deleted" << std::endl;
+                    std::cout << "NodeID: " << participantData->key[0] << std::endl;
                     break;
                 case NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
                     std::cout << "Participant unreachable" << std::endl;
+                    std::cout << "NodeID: " << participantData->key[0] << std::endl;
                     break;
                 default:
                     std::cout << "Unknown instance state: " << info->instance_state << std::endl;
