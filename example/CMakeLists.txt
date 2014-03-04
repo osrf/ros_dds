@@ -16,3 +16,5 @@ target_link_libraries(messageboard ${OPENSPLICE_LIBRARIES})
 add_executable(userload cpp/src/UserLoad.cpp cpp/src/CheckStatus.cpp)
 target_link_libraries(userload ${OPENSPLICE_LIBRARIES})
 
+add_executable(discovery cpp/src/Discovery.cpp cpp/src/CheckStatus.cpp)
+target_link_libraries(discovery ${OPENSPLICE_LIBRARIES})

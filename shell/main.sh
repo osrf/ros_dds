@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Directory in which librarian-puppet should manage its modules directory
-PUPPET_DIR=/etc/puppet/
+PUPPET_DIR=/vagrant/puppet
 
 # NB: librarian-puppet might need git installed. If it is not already installed
 # in your basebox, this will manually install it at this point using apt or yum
@@ -30,9 +30,6 @@ else
   echo 'git found.'
 fi
 
-mkdir -p $PUPPET_DIR
-cp /vagrant/puppet/Puppetfile $PUPPET_DIR
-
 if [ "$(gem search -i puppet)" = "false" ]; then
   gem install puppet
 else
@@ -41,7 +38,7 @@ fi
 
 if [ "$(gem search -i librarian-puppet)" = "false" ]; then
   gem install librarian-puppet
-  cd $PUPPET_DIR && librarian-puppet install --clean
+  cd $PUPPET_DIR && librarian-puppet install --path modules-contrib
 else
   cd $PUPPET_DIR && librarian-puppet update
 fi

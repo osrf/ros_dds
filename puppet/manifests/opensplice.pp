@@ -19,4 +19,13 @@ node default {
         'build-essential': ensure => latest;
         'cmake': ensure => latest;
     }
+
+    file { ['/etc', '/etc/opensplice', '/etc/opensplice/config']:
+        ensure => 'directory'
+    }
+
+    file { '/etc/opensplice/config/ospl.xml':
+        content => template('opensplice/ospl.xml.erb'),
+        require => File['/etc/opensplice/config'],
+    }
 }
