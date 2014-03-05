@@ -30,7 +30,7 @@ int OSPL_MAIN (int argc, char *argv[]) {
         STATUS_MASK_NONE);
     checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
 
-    Subscriber *builtinSubscriber = participant->get_builtin_subscriber();
+    Subscriber_var builtinSubscriber = participant->get_builtin_subscriber();
     checkHandle(builtinSubscriber, "DDS::DomainParticipant::get_builtin_subscriber");
  
     ParticipantBuiltinTopicDataDataReader_var participantsDR = ParticipantBuiltinTopicDataDataReader::_narrow(
