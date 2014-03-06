@@ -28,4 +28,9 @@ node default {
         content => template('opensplice/ospl.xml.erb'),
         require => File['/etc/opensplice/config'],
     }
+
+    exec { 'multicast_routing':
+        command => '/sbin/ip route add 224.0.0.0/4 dev eth1',
+        unless => '/sbin/ip route list|/bin/grep -c 224.0.0.0/4',
+    }
 }
