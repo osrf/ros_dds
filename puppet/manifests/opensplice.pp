@@ -33,4 +33,16 @@ node default {
         command => '/sbin/ip route add 224.0.0.0/4 dev eth1',
         unless => '/sbin/ip route list|/bin/grep -c 224.0.0.0/4',
     }
+
+    file { '/etc/rc.local':
+        content => template('opensplice/rc.local.erb')
+    }
+
+    augeas { 'multicast_routing_augeas':
+        context => "/files/etc/network/interfaces",
+        changes => [
+            "set iface[. = 'eth1']/up '/sbin/ip route add 224.0.0.0/4 dev eth1'",
+            "set iface[. = 'eth1']/down '/sbin/ip route del 224.0.0.0/4 dev eth1'",
+        ],
+    }
 }
