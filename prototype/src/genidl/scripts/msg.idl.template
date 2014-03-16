@@ -1,0 +1,89 @@
+@###############################################
+@#
+@# ROS message to IDL converter
+@#
+@# EmPy template for generating <msg>.idl files
+@#
+@###############################################
+@# Start of Template
+@#
+@# Context:
+@#  - file_name_in (String) Source file
+@#  - spec (msggen.MsgSpec) Parsed specification of the .msg file
+@#  - md5sum (String) MD5Sum of the .msg specification
+@###############################################
+
+@{
+import genmsg.msgs
+import genidl
+}@
+
+#ifndef __@(spec.package)__@(spec.short_name)__h__
+#define __@(spec.package)__@(spec.short_name)__h__
+
+@##############################
+@# Includes for dependencies
+@##############################
+@{
+included = set([])
+for field in spec.parsed_fields():
+  if not field.is_builtin:
+    if field.is_header:
+      print('#include "std_msgs/dds_idl/Header.idl";')
+    else:
+      (package, name) = genmsg.names.package_resource_name(field.base_type)
+      package = package or spec.package # convert '' to package
+      if (package, name) not in included:
+        print('#include "%s/dds_idl/%s.idl";' % (package, name))
+        included.add((package, name))
+}@
+
+module @(spec.package)
+{
+
+module dds_impl
+{
+
+@# Constants
+@[for constant in spec.constants]@
+  const @(genidl.msg_type_to_idl(constant.type)[2]) @(spec.short_name)__@(constant.name) = @(constant.val);
+@[end for]
+
+@{
+typedefs = set([])
+for field in spec.parsed_fields():
+  idl_typedef, idl_typedef_var, _ = genidl.msg_type_to_idl(field.type)
+  if idl_typedef and idl_typedef_var and (idl_typedef, idl_typedef_var) not in typedefs:
+    print('%s %s__%s__%s' % (idl_typedef, spec.package, spec.short_name, idl_typedef_var))
+    typedefs.add((idl_typedef, idl_typedef_var))
+}@
+
+struct @(spec.short_name)_
+{
+
+@# Fields
+@[if spec.parsed_fields()]
+@[for field in spec.parsed_fields()]
+ @{idl_typedef, idl_typedef_var, idl_type = genidl.msg_type_to_idl(field.type)}@
+ @[if idl_type not in ['DDS::Duration', 'DDS::Time']]
+  @[if idl_typedef and idl_typedef_var]
+  @(spec.package)__@(spec.short_name)__@(idl_type) @(field.name)_;
+  @[else]
+  @(idl_type) @(field.name)_;
+  @[end if]
+ @[else]
+  long long @(field.name)_;  // @(idl_type)
+ @[end if]
+@[end for]
+@[else]
+  boolean _dummy;
+@[end if]
+
+
+}; // struct @(spec.short_name)
+
+}; // namespace dds_impl
+
+}; // namespace @(spec.package)
+
+#endif
