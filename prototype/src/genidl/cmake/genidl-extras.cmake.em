@@ -4,7 +4,7 @@ set(GENIDL_BIN "@(CMAKE_CURRENT_SOURCE_DIR)/scripts/gen_idl.py")
 set(GENIDL_TEMPLATE_DIR "@(CMAKE_CURRENT_SOURCE_DIR)/scripts")
 @[else]@
 # bin and template dir variables in installspace
-set(GENIDL_BIN "${GENIDL_DIR}/../../../@(CATKIN_PACKAGE_BIN_DESTINATION)/gen_idl.py")
+set(GENIDL_BIN "${genidl_DIR}/../../../@(CATKIN_PACKAGE_BIN_DESTINATION)/gen_idl.py")
 set(GENIDL_TEMPLATE_DIR "${genidl_DIR}/..")
 @[end if]@
 

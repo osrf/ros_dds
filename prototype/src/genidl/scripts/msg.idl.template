@@ -26,6 +26,7 @@ import genidl
 @##############################
 @{
 included = set([])
+included_dcps = False
 for field in spec.parsed_fields():
   if not field.is_builtin:
     if field.is_header:
@@ -36,6 +37,12 @@ for field in spec.parsed_fields():
       if (package, name) not in included:
         print('#include "%s/dds_idl/%s.idl";' % (package, name))
         included.add((package, name))
+  elif field.type in ['duration', 'time']:
+    if not included_dcps:
+      print('#ifndef OSPL_IDL_COMPILER')
+      print('#include <dds_dcps.idl>')
+      print('#endif')
+      included_dcps = True
 }@
 
 module @(spec.package)
@@ -62,23 +69,18 @@ struct @(spec.short_name)_
 {
 
 @# Fields
-@[if spec.parsed_fields()]
-@[for field in spec.parsed_fields()]
- @{idl_typedef, idl_typedef_var, idl_type = genidl.msg_type_to_idl(field.type)}@
- @[if idl_type not in ['DDS::Duration', 'DDS::Time']]
-  @[if idl_typedef and idl_typedef_var]
-  @(spec.package)__@(spec.short_name)__@(idl_type) @(field.name)_;
-  @[else]
+@[if spec.parsed_fields()]@
+@[  for field in spec.parsed_fields()]@
+@{    idl_typedef, idl_typedef_var, idl_type = genidl.msg_type_to_idl(field.type)}@
+@[    if idl_typedef and idl_typedef_var]@
+@(      spec.package)__@(spec.short_name)__@(idl_type) @(field.name)_;
+@[    else]@
   @(idl_type) @(field.name)_;
-  @[end if]
- @[else]
-  long long @(field.name)_;  // @(idl_type)
- @[end if]
-@[end for]
-@[else]
+@[    end if]@
+@[  end for]@
+@[  else]@
   boolean _dummy;
-@[end if]
-
+@[  end if]@
 
 }; // struct @(spec.short_name)
 

@@ -1,0 +1,126 @@
+@###############################################
+@#
+@# Conversion functions between a ROS message
+@# and DDS message
+@#
+@# EmPy template for <msg>_convert.cpp files
+@#
+@###############################################
+
+#include "@(spec.package)/dds_impl/@(spec.short_name)_convert.h"
+
+@{
+from genmsg.names import package_resource_name
+included = set([])
+for field in spec.parsed_fields():
+  if not field.is_builtin:
+    if field.is_header:
+      print('#include "std_msgs/dds_impl/Header_convert.h"')
+    else:
+      (package, name) = package_resource_name(field.base_type)
+      package = package or spec.package # convert '' to package
+      if (package, name) not in included:
+        print('#include "%s/dds_impl/%s_convert.h"' % (package, name))
+        included.add((package, name))
+}@
+
+namespace dds_impl
+{
+
+void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message)
+{
+@[for field in spec.parsed_fields()]@
+  // field.name @(field.name)
+  // field.type @(field.type)
+  // field.base_type @(field.base_type)
+  // field.is_array @(field.is_array)
+@[if field.array_len]@
+  // field.array_len @(field.array_len)
+@[else]@
+  // field.array_len dynamic
+@[end if]@
+  // field.is_header @(field.is_header)
+  // field.is_builtin @(field.is_builtin)
+@[if field.is_array]@
+  {
+    size_t size = ros_message.@(field.name).size();
+@[if field.array_len]@
+    if (size != @(field.array_len)) {
+      std::runtime_error("convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message) the array size of the field '@(field.name)' of the ROS message differs form the fixed size specified in the message idl")
+    }
+@[end if]@
+    dds_message.@(field.name)_.length(size);
+    for (size_t i = 0; i < size; i++) {
+@[if field.type in ['duration', 'time']]@
+      dds_message.@(field.name)_[i].sec = ros_message.@(field.name)[i].sec;
+      dds_message.@(field.name)_[i].nanosec = ros_message.@(field.name)[i].nsec;
+@[elif field.type == 'string']@
+      dds_message.@(field.name)_[i] = ros_message.@(field.name)[i].c_str();
+@[elif field.is_builtin]@
+      dds_message.@(field.name)_[i] = ros_message.@(field.name)[i];
+@[else]@
+      convert_ros_message_to_dds(ros_message.@(field.name)[i], dds_message.@(field.name)_[i]);
+@[end if]@
+    }
+  }
+@[elif field.type in ['duration', 'time']]@
+  dds_message.@(field.name)_.sec = ros_message.@(field.name).sec;
+  dds_message.@(field.name)_.nanosec = ros_message.@(field.name).nsec;
+@[elif field.type == 'string']@
+  dds_message.@(field.name)_ = ros_message.@(field.name).c_str();
+@[elif field.is_builtin]@
+  dds_message.@(field.name)_ = ros_message.@(field.name);
+@[else]@
+  convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
+@[end if]@
+
+@[end for]@
+}
+
+void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message)
+{
+@[for field in spec.parsed_fields()]@
+  // field.name @(field.name)
+  // field.type @(field.type)
+  // field.base_type @(field.base_type)
+  // field.is_array @(field.is_array)
+@[if field.array_len]@
+  // field.array_len @(field.array_len)
+@[else]@
+  // field.array_len dynamic
+@[end if]@
+  // field.is_header @(field.is_header)
+  // field.is_builtin @(field.is_builtin)
+@[if field.is_array]@
+  {
+    size_t size = dds_message.@(field.name)_.length();
+@[if field.array_len]@
+    if (size != @(field.array_len)) {
+      std::runtime_error("convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message) the array size of the field '@(field.name)' of the DDS message differs form the fixed size specified in the message idl")
+    }
+@[end if]@
+    ros_message.@(field.name).resize(size);
+    for (size_t i = 0; i < size; i++) {
+@[if field.type in ['duration', 'time']]@
+      ros_message.@(field.name)[i].sec = dds_message.@(field.name)_[i].sec;
+      ros_message.@(field.name)[i].nsec = dds_message.@(field.name)_[i].nanosec;
+@[elif field.is_builtin]@
+      ros_message.@(field.name)[i] = dds_message.@(field.name)_[i];
+@[else]@
+      convert_dds_message_to_ros(dds_message.@(field.name)_[i], ros_message.@(field.name)[i]);
+@[end if]@
+    }
+  }
+@[elif field.type in ['duration', 'time']]@
+  ros_message.@(field.name).sec = dds_message.@(field.name)_.sec;
+  ros_message.@(field.name).nsec = dds_message.@(field.name)_.nanosec;
+@[elif field.is_builtin]@
+  ros_message.@(field.name) = dds_message.@(field.name)_;
+@[else]@
+  convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
+@[end if]@
+
+@[end for]@
+}
+
+}; // namespace dds_impl

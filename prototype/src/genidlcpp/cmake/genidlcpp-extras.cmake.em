@@ -2,6 +2,15 @@ find_package(opensplice REQUIRED)
 include_directories(${OPENSPLICE_INCLUDE_DIRS})
 
 set(GENIDLCPP_PP_BIN "idlpp")
+@[if DEVELSPACE]@
+# bin and template dir variables in develspace
+set(GENIDLCPP_BIN "@(CMAKE_CURRENT_SOURCE_DIR)/scripts/gen_idl_cpp_convert.py")
+set(GENIDLCPP_TEMPLATE_DIR "@(CMAKE_CURRENT_SOURCE_DIR)/scripts")
+@[else]@
+# bin and template dir variables in installspace
+set(GENIDLCPP_BIN "${genidlcpp_DIR}/../../../@(CATKIN_PACKAGE_BIN_DESTINATION)/gen_idl_cpp_convert.py")
+set(GENIDLCPP_TEMPLATE_DIR "${genidlcpp_DIR}/..")
+@[end if]@
 
 # Generate .idl -> .h
 # The generated .h files should be added ALL_GEN_OUTPUT_FILES_idlcpp
@@ -13,7 +22,17 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
   get_filename_component(MSG_SHORT_NAME ${ARG_MSG} NAME_WE)
 
   set(IDL_INPUT_FILE "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${ARG_PKG}/dds_idl/${MSG_SHORT_NAME}.idl")
-  set(GEN_OUTPUT_FILE ${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}.h)
+  set(GEN_OUTPUT_FILES
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps_impl.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps_impl.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}SplDcps.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}SplDcps.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/ccpp_${MSG_SHORT_NAME}.h"
+  )
 
   set(IDL_DEPS "")
   foreach(dep ${ARG_MSG_DEPS})
@@ -28,16 +47,34 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
   set(COMMAND "${GENIDLCPP_PP_BIN}" -I "@(CATKIN_DEVEL_PREFIX)/@(CATKIN_GLOBAL_SHARE_DESTINATION)" -S -l cpp -o dds-types -d "${ARG_GEN_OUTPUT_DIR}/dds_impl" "${IDL_INPUT_FILE}")
 
   string(REPLACE ";" " " COMMAND_STR "${COMMAND}")
-  message("${COMMAND_STR}")
+  #message("${COMMAND_STR}")
 
-  add_custom_command(OUTPUT ${GEN_OUTPUT_FILE}
+  add_custom_command(OUTPUT ${GEN_OUTPUT_FILES}
     DEPENDS ${IDL_DEPS} ${IDL_INPUT_FILE}
     COMMAND ${COMMAND}
     COMMENT "Generating DDS C++ code from ${ARG_PKG}/${MSG_SHORT_NAME}.idl"
     )
-  list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILE})
+  list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILES})
 
   genidlcpp_append_include_dirs()
+
+  set(GEN_OUTPUT_FILES
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.cpp"
+  )
+
+  set(COMMAND ${GENIDLCPP_BIN} ${ARG_MSG} ${ARG_PKG} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR})
+
+  string(REPLACE ";" " " COMMAND_STR "${COMMAND}")
+  #message("${COMMAND_STR}")
+
+  assert(CATKIN_ENV)
+  add_custom_command(OUTPUT ${GEN_OUTPUT_FILES}
+    DEPENDS ${GENIDLCPP_BIN} ${ARG_MSG} "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.h.template" "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.cpp.template"
+    COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${COMMAND}
+    COMMENT "Generating conversion code between ROS and DDS message instances for ${ARG_PKG}/${MSG_NAME}"
+    )
+  list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILES})
 endmacro()
 
 #genidl uses the same program to generate srv and msg files, so call the same macro
@@ -50,16 +87,7 @@ macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
   foreach(dep ${${ARG_PKG}_MSG_DEPENDENCIES})
     include_directories(BEFORE ${CATKIN_DEVEL_PREFIX}/include/${dep}/dds_impl)
   endforeach()
-  set(output_dir ${ARG_GEN_OUTPUT_DIR}/dds_impl)
-  set(cpp_files "")
-  foreach(generated_file ${ARGN})
-    get_filename_component(msg_name ${generated_file} NAME_WE)
-    list(APPEND cpp_files "${output_dir}/${msg_name}.cpp")
-    list(APPEND cpp_files "${output_dir}/${msg_name}Dcps.cpp")
-    list(APPEND cpp_files "${output_dir}/${msg_name}Dcps_impl.cpp")
-    list(APPEND cpp_files "${output_dir}/${msg_name}SplDcps.cpp")
-  endforeach()
-  add_library(${PROJECT_NAME}_dds_msgs ${cpp_files})
+  add_library(${PROJECT_NAME}_dds_msgs ${ARGN})
 endmacro()
 
 set(genidlcpp_INSTALL_DIR include)

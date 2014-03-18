@@ -20,8 +20,8 @@ MSG_TYPE_TO_IDL = {
     'float32': 'float',
     'float64': 'double',
     'string': 'string',
-    'time': 'DDS::Time',  # TODO reconsider mapping
-    'duration': 'DDS::Duration'  # TODO reconsider mapping
+    'time': 'DDS::Time_t',
+    'duration': 'DDS::Duration_t'
 }
 
 #used
