@@ -43,18 +43,17 @@ void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_m
   // field.is_builtin @(field.is_builtin)
 @[if field.is_array]@
   {
-    size_t size = ros_message.@(field.name).size();
 @[if field.array_len]@
-    if (size != @(field.array_len)) {
-      std::runtime_error("convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message) the array size of the field '@(field.name)' of the ROS message differs form the fixed size specified in the message idl")
-    }
-@[end if]@
+    size_t size = @(field.array_len);
+@[else]@
+    size_t size = ros_message.@(field.name).size();
     dds_message.@(field.name)_.length(size);
+@[end if]@
     for (size_t i = 0; i < size; i++) {
-@[if field.type in ['duration', 'time']]@
+@[if field.base_type in ['duration', 'time']]@
       dds_message.@(field.name)_[i].sec = ros_message.@(field.name)[i].sec;
       dds_message.@(field.name)_[i].nanosec = ros_message.@(field.name)[i].nsec;
-@[elif field.type == 'string']@
+@[elif field.base_type == 'string']@
       dds_message.@(field.name)_[i] = ros_message.@(field.name)[i].c_str();
 @[elif field.is_builtin]@
       dds_message.@(field.name)_[i] = ros_message.@(field.name)[i];
@@ -93,15 +92,14 @@ void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_na
   // field.is_builtin @(field.is_builtin)
 @[if field.is_array]@
   {
-    size_t size = dds_message.@(field.name)_.length();
 @[if field.array_len]@
-    if (size != @(field.array_len)) {
-      std::runtime_error("convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message) the array size of the field '@(field.name)' of the DDS message differs form the fixed size specified in the message idl")
-    }
-@[end if]@
+    size_t size = @(field.array_len);
+@[else]@
+    size_t size = dds_message.@(field.name)_.length();
     ros_message.@(field.name).resize(size);
+@[end if]@
     for (size_t i = 0; i < size; i++) {
-@[if field.type in ['duration', 'time']]@
+@[if field.base_type in ['duration', 'time']]@
       ros_message.@(field.name)[i].sec = dds_message.@(field.name)_[i].sec;
       ros_message.@(field.name)[i].nsec = dds_message.@(field.name)_[i].nanosec;
 @[elif field.is_builtin]@
