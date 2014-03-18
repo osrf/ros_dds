@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package>
+  <name>rclcpp</name>
+  <version>0.0.0</version>
+  <description>ROS Client Library for C++</description>
+  <maintainer email="william@osrfoundation.org">William Woodall</maintainer>
+  <maintainer email="esteve@osrfoundation.org">Esteve Fernandez</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend version_gte="0.5.78">catkin</buildtool_depend>
+
+</package>
