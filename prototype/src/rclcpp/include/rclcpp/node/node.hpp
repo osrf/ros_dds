@@ -1,3 +1,5 @@
+#include <map>
+
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
 
@@ -11,14 +13,13 @@ namespace rclcpp
         class Node
         {
         public:
-            Node();
+            Node(std::string name);
             ~Node();
 
-            template <typename T>
-            Publisher<T> create_publisher(std::string topic_name, size_t queue_size);
+            Publisher create_publisher(std::string topic_name, size_t queue_size);
 
-            template <typename T>
-            void destroy_publisher(Publisher<T> publisher);
+            void destroy_publisher(Publisher publisher);
+            void destroy_publisher(std::string topic_name);
 
             template <typename T>
             Subscription<T> create_subscription(std::string topic_name,
@@ -27,6 +28,10 @@ namespace rclcpp
 
             template <typename T>
             void destroy_subscription(Subscription<T> subscription);
+        private:
+            std::string name_;
+
+            std::map<std::string, Publisher> publishers_;
         };
     }
 }
