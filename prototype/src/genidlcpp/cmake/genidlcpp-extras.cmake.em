@@ -1,3 +1,6 @@
+find_package(opensplice REQUIRED)
+include_directories(${OPENSPLICE_INCLUDE_DIRS})
+
 set(GENIDLCPP_PP_BIN "idlpp")
 
 # Generate .idl -> .h
@@ -19,6 +22,7 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
     get_filename_component(dep_pkg ${dep_pkg} PATH)
     get_filename_component(dep_pkg ${dep_pkg} NAME)
     list(APPEND IDL_DEPS "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${dep_pkg}/dds_idl/${dep_name}.idl")
+    list(APPEND ${ARG_PKG}_MSG_DEPENDENCIES "${dep_pkg}")
   endforeach()
 
   set(COMMAND "${GENIDLCPP_PP_BIN}" -I "@(CATKIN_DEVEL_PREFIX)/@(CATKIN_GLOBAL_SHARE_DESTINATION)" -S -l cpp -o dds-types -d "${ARG_GEN_OUTPUT_DIR}/dds_impl" "${IDL_INPUT_FILE}")
@@ -41,8 +45,21 @@ macro(_generate_srv_idlcpp ARG_PKG ARG_SRV ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
   #_generate_msg_idlcpp(${ARG_PKG} ${ARG_SRV} "${ARG_IFLAGS}" "${ARG_MSG_DEPS}" ${ARG_GEN_OUTPUT_DIR})
 endmacro()
 
-macro(_generate_module_idlcpp)
-  # the macros, they do nothing
+macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
+  list(REMOVE_DUPLICATES ${ARG_PKG}_MSG_DEPENDENCIES)
+  foreach(dep ${${ARG_PKG}_MSG_DEPENDENCIES})
+    include_directories(BEFORE ${CATKIN_DEVEL_PREFIX}/include/${dep}/dds_impl)
+  endforeach()
+  set(output_dir ${ARG_GEN_OUTPUT_DIR}/dds_impl)
+  set(cpp_files "")
+  foreach(generated_file ${ARGN})
+    get_filename_component(msg_name ${generated_file} NAME_WE)
+    list(APPEND cpp_files "${output_dir}/${msg_name}.cpp")
+    list(APPEND cpp_files "${output_dir}/${msg_name}Dcps.cpp")
+    list(APPEND cpp_files "${output_dir}/${msg_name}Dcps_impl.cpp")
+    list(APPEND cpp_files "${output_dir}/${msg_name}SplDcps.cpp")
+  endforeach()
+  add_library(${PROJECT_NAME}_dds_msgs ${cpp_files})
 endmacro()
 
 set(genidlcpp_INSTALL_DIR include)
