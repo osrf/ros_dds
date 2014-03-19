@@ -16,4 +16,3 @@ Node rclcpp::create_node(std::string name)
 {
     return Node(name);
 }
-

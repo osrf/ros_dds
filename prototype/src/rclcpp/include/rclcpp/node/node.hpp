@@ -1,5 +1,7 @@
 #include <map>
 
+#include <ccpp_dds_dcps.h>
+
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
 
@@ -30,6 +32,8 @@ namespace rclcpp
             void destroy_subscription(Subscription<T> subscription);
         private:
             std::string name_;
+            DDS::DomainParticipantFactory_var dpf_;
+            DDS::DomainParticipant_var participant_;
 
             std::map<std::string, Publisher> publishers_;
         };

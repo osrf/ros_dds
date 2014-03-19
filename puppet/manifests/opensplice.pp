@@ -12,12 +12,27 @@ node default {
       key_source => 'http://packages.osrfoundation.org/gazebo.key',
     }
 
+    apt::key { 'ros-latest':
+      key_source => 'http://packages.ros.org/ros.key',
+    }
+
+    apt::source { 'ros-latest':
+        location => 'http://packages.ros.org/ros/ubuntu',
+        release => 'precise',
+        repos => 'main',
+        require => Apt::Key['ros-latest'];
+    }
+
     package {
         'libopensplice63':
              ensure => latest,
              require => Apt::Source['gazebo-latest'];
         'build-essential': ensure => latest;
         'cmake': ensure => latest;
+        'vim': ensure => latest;
+        'ros-hydro-ros-base':
+             ensure => latest,
+             require => Apt::Source['ros-latest'];
     }
 
     file { ['/etc', '/etc/opensplice', '/etc/opensplice/config']:
