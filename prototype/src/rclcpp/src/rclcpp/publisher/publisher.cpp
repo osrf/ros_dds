@@ -4,7 +4,7 @@ namespace rclcpp
 {
     namespace publisher
     {
-        template <> inline void rclcpp::publisher::Publisher::publish<std::string>(std::string msg)
+        template <> void rclcpp::publisher::Publisher::publish<std::string>(std::string msg)
         {
             ROSMessage_var ros_message = new ROSMessage();
             ros_message->data = msg.c_str();
