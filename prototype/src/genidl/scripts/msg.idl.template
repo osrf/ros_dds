@@ -82,7 +82,9 @@ struct @(spec.short_name)_
   boolean _dummy;
 @[  end if]@
 
-}; // struct @(spec.short_name)
+}; // struct @(spec.short_name)_
+
+#pragma keylist @(spec.short_name)_
 
 }; // namespace dds_impl
 
