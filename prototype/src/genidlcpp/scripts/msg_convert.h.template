@@ -1,0 +1,25 @@
+@###############################################
+@#
+@# Conversion functions between a ROS message
+@# and DDS message
+@#
+@# EmPy template for <msg>_convert.h files
+@#
+@###############################################
+
+#ifndef __@(spec.package)__@(spec.short_name)__convert__h__
+#define __@(spec.package)__@(spec.short_name)__convert__h__
+
+#include "@(spec.package)/@(spec.short_name).h"
+#include "@(spec.package)/dds_impl/@(spec.short_name).h"
+
+namespace dds_impl
+{
+
+void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message);
+
+void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message);
+
+}; // namespace dds_impl
+
+#endif

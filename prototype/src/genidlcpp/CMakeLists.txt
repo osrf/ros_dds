@@ -7,6 +7,8 @@ catkin_package(
   CFG_EXTRAS genidlcpp-extras.cmake
 )
 
+add_subdirectory(scripts)
+
 file(WRITE ${CATKIN_DEVEL_PREFIX}/${GENMSG_LANGS_DESTINATION}/genidlcpp "IDLcpp")
 install(FILES ${CATKIN_DEVEL_PREFIX}/${GENMSG_LANGS_DESTINATION}/genidlcpp
   DESTINATION ${GENMSG_LANGS_DESTINATION})
