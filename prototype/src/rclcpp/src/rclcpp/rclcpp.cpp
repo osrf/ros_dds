@@ -1,3 +1,6 @@
+#ifndef RCLCPP_HPP
+#define RCLCPP_HPP
+
 #include <rclcpp/rclcpp.hpp>
 
 using namespace rclcpp;
@@ -16,3 +19,4 @@ Node rclcpp::create_node(std::string name)
 {
     return Node(name);
 }
+#endif

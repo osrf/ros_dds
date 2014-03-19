@@ -1,9 +1,14 @@
+#ifndef NODE_HPP
+#define NODE_HPP
 #include <map>
 
 #include <ccpp_dds_dcps.h>
 
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
+
+// TODO: use something less generic
+#include "ccpp_ROSMsg.h"
 
 namespace rclcpp
 {
@@ -39,3 +44,4 @@ namespace rclcpp
         };
     }
 }
+#endif
