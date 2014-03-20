@@ -10,8 +10,14 @@ namespace rclcpp
 {
     namespace subscription
     {
+        class SubscriptionInterface
+        {
+            public:
+                virtual void spin() = 0;
+        };
+
         template <typename T>
-        class Subscription
+        class Subscription : public SubscriptionInterface
         {
         public:
             typedef boost::shared_ptr<const T> msg_shared_ptr;
@@ -43,6 +49,8 @@ namespace rclcpp
 
                 this->data_reader_->return_loan(ros_message_seq, sample_info_seq);
            }
+
+           
         private:
             ROSMessageDataReader_var data_reader_; 
             CallbackType cb_;

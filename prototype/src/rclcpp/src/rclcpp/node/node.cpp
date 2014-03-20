@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node/node.hpp>
 #include <ccpp_dds_dcps.h>
+//#include <boost/thread.hpp>
 
 #include "ccpp_ROSMsg.h"
 
@@ -18,6 +19,20 @@ Node::Node(std::string name)
     this->participant_ = this->dpf_->create_participant(
         domain, PARTICIPANT_QOS_DEFAULT, NULL,
         DDS::STATUS_MASK_NONE);
+
+//    this->subscription_watcher_th = boost::thread(this->subscription_watcher);
+}
+
+void Node::subscription_watcher()
+{
+    while(true)
+    {
+        std::list<rclcpp::SubscriptionInterface *>::const_iterator iterator;
+        for (iterator = this->subscriptions_.begin(); iterator != this->subscriptions_.end(); ++iterator) {
+            (*iterator)->spin();
+        }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+    }
 }
 
 Node::~Node() {

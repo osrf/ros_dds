@@ -1,11 +1,14 @@
 #ifndef NODE_HPP
 #define NODE_HPP
 #include <map>
+#include <list>
 
 #include <ccpp_dds_dcps.h>
 
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
+
+#include <boost/thread.hpp>
 
 // TODO: use something less generic
 #include "ccpp_ROSMsg.h"
@@ -14,6 +17,7 @@ namespace rclcpp
 {
     using publisher::Publisher;
     using subscription::Subscription;
+    using subscription::SubscriptionInterface;
 
     namespace node
     {
@@ -67,17 +71,24 @@ namespace rclcpp
    
                 ROSMessageDataReader_var data_reader = ROSMessageDataReader::_narrow(topic_reader.in());
 
-                return Subscription<T>(data_reader, cb);
+                Subscription<T> subscription(data_reader, cb);
+                SubscriptionInterface *subscription_if = &subscription;
+                this->subscriptions_.push_back(subscription_if);
+                return subscription;
             };
 
             template <typename T>
             void destroy_subscription(Subscription<T> subscription);
+
+            void subscription_watcher();
         private:
             std::string name_;
             DDS::DomainParticipantFactory_var dpf_;
             DDS::DomainParticipant_var participant_;
 
             std::map<std::string, Publisher> publishers_;
+            std::list<SubscriptionInterface *> subscriptions_;
+//            boost::thread subscription_watcher_th;
         };
     }
 }

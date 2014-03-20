@@ -15,9 +15,10 @@ int main(int argc, char** argv)
     rclcpp::Publisher publisher = node.create_publisher("rossometopic", 10);
     publisher.publish<std::string>("Hello world");
     rclcpp::Subscription<std::string> subscription = node.create_subscription<std::string>("rossometopic", 10, callback); 
+    rclcpp::subscription::SubscriptionInterface *subscription_interface = (&subscription);
     for(int i=0;i < 10000; ++i)
     {
-        subscription.spin();
+        subscription_interface->spin();
         usleep(100000);
     }
 

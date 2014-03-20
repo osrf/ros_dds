@@ -3,6 +3,7 @@ project(rclcpp)
 
 find_package(opensplice REQUIRED)
 find_package(catkin REQUIRED)
+find_package(Boost COMPONENTS thread system REQUIRED)
 
 ospl_add_idl(idl/ROSMsg.idl)
 
