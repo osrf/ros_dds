@@ -13,14 +13,13 @@ int main(int argc, char** argv)
 
     rclcpp::Node node = rclcpp::create_node("talker");
     rclcpp::Publisher publisher = node.create_publisher("rossometopic", 10);
-    publisher.publish<std::string>("Hello world");
     rclcpp::Subscription<std::string> subscription = node.create_subscription<std::string>("rossometopic", 10, callback); 
-    rclcpp::subscription::SubscriptionInterface *subscription_interface = (&subscription);
+    while(true)
     for(int i=0;i < 10000; ++i)
     {
-        subscription_interface->spin();
+        publisher.publish<std::string>("Hello world " + std::string(argv[1]));
         usleep(100000);
     }
-
+    node.wait();
     return 0;
 }

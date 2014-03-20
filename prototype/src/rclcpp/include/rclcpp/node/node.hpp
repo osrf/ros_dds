@@ -80,7 +80,7 @@ namespace rclcpp
             template <typename T>
             void destroy_subscription(Subscription<T> subscription);
 
-            void subscription_watcher();
+            void wait();
         private:
             std::string name_;
             DDS::DomainParticipantFactory_var dpf_;
@@ -88,7 +88,9 @@ namespace rclcpp
 
             std::map<std::string, Publisher> publishers_;
             std::list<SubscriptionInterface *> subscriptions_;
-//            boost::thread subscription_watcher_th;
+            boost::thread *subscription_watcher_th;
+
+            void subscription_watcher();
         };
     }
 }

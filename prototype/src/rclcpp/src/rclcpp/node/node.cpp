@@ -20,7 +20,7 @@ Node::Node(std::string name)
         domain, PARTICIPANT_QOS_DEFAULT, NULL,
         DDS::STATUS_MASK_NONE);
 
-//    this->subscription_watcher_th = boost::thread(this->subscription_watcher);
+    this->subscription_watcher_th = new boost::thread(boost::bind(&Node::subscription_watcher, this));
 }
 
 void Node::subscription_watcher()
@@ -35,8 +35,14 @@ void Node::subscription_watcher()
     }
 }
 
+void Node::wait()
+{
+    this->subscription_watcher_th->join();
+}
+
 Node::~Node() {
     this->dpf_->delete_participant(this->participant_);
+    delete this->subscription_watcher_th;
 }
 
 Publisher Node::create_publisher(std::string topic_name, size_t queue_size)
