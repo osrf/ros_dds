@@ -1,7 +1,7 @@
 #include <ccpp_dds_dcps.h>
 #include <string>
 
-#include "std_msgs/dds_impl/ccpp_Int32.h"
+#include "std_msgs/dds_impl/ccpp_Int32_.h"
 
 
 /*
