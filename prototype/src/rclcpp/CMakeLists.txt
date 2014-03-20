@@ -2,18 +2,15 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rclcpp)
 
 find_package(opensplice REQUIRED)
-find_package(catkin REQUIRED COMPONENTS genidlcpp std_msgs)
-
-ospl_add_idl(idl/ROSMsg.idl)
+find_package(catkin REQUIRED COMPONENTS genidlcpp)
 
 include_directories(include ${OPENSPLICE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-link_directories(${OPENSPLICE_LIBRARY_DIRS})
 
-catkin_package()
+catkin_package(
+    INCLUDE_DIRS include ${OPENSPLICE_INCLUDE_DIRS}
+    LIBRARIES rclcpp ${OPENSPLICE_LIBRARIES}
+    CATKIN_DEPENDS genidlcpp
+)
 
-add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp src/rclcpp/subscription/subscription.cpp)
+add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
 target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES})
-
-add_executable(example example/src/main.cpp)
-target_link_libraries(example rclcpp ${OPENSPLICE_LIBRARIES} ${catkin_LIBRARIES} std_msgs_dds_msgs)
-add_dependencies(example ${catkin_EXPORTED_TARGETS})

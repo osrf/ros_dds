@@ -90,6 +90,7 @@ macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
   endforeach()
   add_library(${PROJECT_NAME}_dds_msgs ${ARGN})
   target_link_libraries(${PROJECT_NAME}_dds_msgs ${OPENSPLICE_LIBRARIES})
+  list(APPEND ${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME}_dds_msgs)  # This won't work until catkin supports it
 endmacro()
 
 set(genidlcpp_INSTALL_DIR include)

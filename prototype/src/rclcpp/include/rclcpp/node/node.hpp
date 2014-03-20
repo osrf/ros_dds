@@ -7,7 +7,7 @@
 #include <ccpp_dds_dcps.h>
 
 #include <rclcpp/publisher/publisher.hpp>
-#include <rclcpp/subscription/subscription.hpp>
+// #include <rclcpp/subscription/subscription.hpp>
 
 #include <genidlcpp/resolver.h>
 
@@ -16,7 +16,7 @@ namespace rclcpp
 
 using publisher::Publisher;
 using publisher::PublisherInterface;
-using subscription::Subscription;
+// using subscription::Subscription;
 
 namespace node
 {
@@ -75,13 +75,13 @@ public:
     void destroy_publisher(PublisherInterface * publisher);
     void destroy_publisher(std::string topic_name);
 
-    template <typename T>
-    Subscription<T> create_subscription(std::string topic_name,
-                                        size_t queue_size,
-                                        typename Subscription<T>::CallbackType cb);
+    // template <typename T>
+    // Subscription<T> create_subscription(std::string topic_name,
+    //                                     size_t queue_size,
+    //                                     typename Subscription<T>::CallbackType cb);
 
-    template <typename T>
-    void destroy_subscription(Subscription<T> subscription);
+    // template <typename T>
+    // void destroy_subscription(Subscription<T> subscription);
 private:
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
