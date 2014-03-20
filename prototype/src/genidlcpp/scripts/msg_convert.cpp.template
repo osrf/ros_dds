@@ -26,7 +26,7 @@ for field in spec.parsed_fields():
 
 namespace dds_impl
 {
-
+/*
 void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message)
 {
 @[for field in spec.parsed_fields()]@
@@ -120,5 +120,6 @@ void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_na
 
 @[end for]@
 }
+*/
 
 }; // namespace dds_impl

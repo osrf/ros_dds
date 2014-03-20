@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node/node.hpp>
 #include <ccpp_dds_dcps.h>
+//#include <boost/thread.hpp>
 
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
@@ -27,10 +28,36 @@ Node::Node(std::string name)
     // checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
     this->default_publisher_qos_.partition.name.length(1);
     this->default_publisher_qos_.partition.name[0] = "ros_partition";
+
+    // Create the default QoS for Subscribers
+    status = this->participant_->get_default_subscriber_qos(this->default_subscriber_qos_);
+    // checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
+    this->default_subscriber_qos_.partition.name.length(1);
+    this->default_subscriber_qos_.partition.name[0] = "ros_partition";
+
+    this->subscription_watcher_th = new boost::thread(boost::bind(&Node::subscription_watcher, this));
+}
+
+void Node::subscription_watcher()
+{
+    while(true)
+    {
+        std::list<rclcpp::SubscriptionInterface *>::const_iterator iterator;
+        for (iterator = this->subscriptions_.begin(); iterator != this->subscriptions_.end(); ++iterator) {
+            (*iterator)->spin();
+        }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+    }
+}
+
+void Node::wait()
+{
+    this->subscription_watcher_th->join();
 }
 
 Node::~Node() {
     this->dpf_->delete_participant(this->participant_);
+    delete this->subscription_watcher_th;
 }
 
 void Node::destroy_publisher(PublisherInterface * publisher)

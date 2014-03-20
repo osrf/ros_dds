@@ -4,6 +4,8 @@ project(rclcpp)
 find_package(opensplice REQUIRED)
 find_package(catkin REQUIRED COMPONENTS genidlcpp)
 
+find_package(Boost REQUIRED COMPONENTS system thread)
+
 include_directories(include ${OPENSPLICE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
 catkin_package(
@@ -12,5 +14,6 @@ catkin_package(
     CATKIN_DEPENDS genidlcpp
 )
 
+
 add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
-target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES})
+target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES} ${Boost_LIBRARIES})

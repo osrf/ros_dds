@@ -8,10 +8,14 @@ template<typename T>
 struct DDSTypeResolver
 {
   typedef void* DDSMsgType;
+  typedef void* DDSMsgSeqType;
+  typedef void* DDSMsgSeqType_var;
   typedef void* DDSMsgTypeSupportType;
   typedef void* DDSMsgTypeSupportType_var;
   typedef void* DDSMsgDataWriter;
   typedef void* DDSMsgDataWriter_var;
+  typedef void* DDSMsgDataReader;
+  typedef void* DDSMsgDataReader_var;
 };
 
 template <typename T, typename U>

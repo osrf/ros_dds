@@ -3,31 +3,41 @@
 
 #include <boost/shared_ptr.hpp>
 
-// TODO: use something less generic
-#include "ccpp_ROSMsg.h"
+#include <genidlcpp/resolver.h>
+
+#include <ccpp_dds_dcps.h>
 
 namespace rclcpp
 {
     namespace subscription
     {
-        template <typename T>
-        class Subscription
+        class SubscriptionInterface
+        {
+            public:
+                virtual void spin() = 0;
+        };
+
+        template <typename ROSMsgType>
+        class Subscription : public SubscriptionInterface
         {
         public:
-            typedef boost::shared_ptr<const T> msg_shared_ptr;
-            typedef void (*CallbackType)(const T &msg);
+            typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgSeqType DDSMsgSeqType;
+            typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgSeqType_var DDSMsgSeqType_var;
+            typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType_var DDSMsgDataReader_var;
+            typedef boost::shared_ptr<const ROSMsgType> msg_shared_ptr;
+            typedef void (*CallbackType)(const ROSMsgType &msg);
             typedef void (*SharedPtrCallbackType)(const msg_shared_ptr msg);
 
-            Subscription(ROSMessageDataReader_var data_reader, CallbackType cb) : data_reader_(data_reader), cb_(cb) {}
+            Subscription(DDSMsgDataReader_var data_reader, CallbackType cb) : data_reader_(data_reader), cb_(cb) {}
             ~Subscription() {}
 
 
             void spin()
             {
-                ROSMessageSeq_var ros_message_seq = new ROSMessageSeq();
+                DDSMsgSeqType_var dds_msg_seq = new DDSMsgSeqType();
                 DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
                 this->data_reader_->take(
-                    ros_message_seq,
+                    dds_msg_seq,
                     sample_info_seq,
                     DDS::LENGTH_UNLIMITED,
                     DDS::ANY_SAMPLE_STATE,
@@ -35,16 +45,18 @@ namespace rclcpp
                     DDS::ALIVE_INSTANCE_STATE
                 );
 
-                for (DDS::ULong i = 0; i < ros_message_seq->length(); i++)
+                for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
                 {
-                    ROSMessage *msg = &(ros_message_seq[i]);
-                    this->cb_(T(msg->data));
+                    ROSMsgType ros_msg;
+                    dds_impl::convert_dds_message_to_ros(dds_msg_seq[i], ros_msg);
+                    this->cb_(ros_msg);
                 }
 
-                this->data_reader_->return_loan(ros_message_seq, sample_info_seq);
+                this->data_reader_->return_loan(dds_msg_seq, sample_info_seq);
            }
+
         private:
-            ROSMessageDataReader_var data_reader_; 
+            DDSMsgDataReader_var data_reader_;
             CallbackType cb_;
         };
     }

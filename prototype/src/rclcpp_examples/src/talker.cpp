@@ -1,7 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 
-#include <std_msgs/Int32.h>
-#include "std_msgs/dds_impl/Int32_convert.h"
+#include <std_msgs/String.h>
+#include "std_msgs/dds_impl/String_convert.h"
 
 int main(int argc, char** argv)
 {
@@ -9,9 +9,9 @@ int main(int argc, char** argv)
 
     rclcpp::Node node = rclcpp::create_node("talker");
 
-    rclcpp::Publisher<std_msgs::Int32> publisher = node.create_publisher<std_msgs::Int32>("chatter", 0);
+    rclcpp::Publisher<std_msgs::String> publisher = node.create_publisher<std_msgs::String>("chatter", 0);
 
-    std_msgs::Int32 msg;
-    msg.data = 2;
+    std_msgs::String msg;
+    msg.data = "Hello World!";
     publisher.publish(msg);
 }

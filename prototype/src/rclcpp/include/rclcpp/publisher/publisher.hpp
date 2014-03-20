@@ -4,8 +4,6 @@
 
 #include <ccpp.h>
 
-#include <rclcpp/publisher/message_queue.hpp>
-
 #include <genidlcpp/resolver.h>
 
 // #include <rclcpp/impl/check_status.h>
@@ -73,9 +71,9 @@ public:
     void publish(const ROSMsgType &msg)
     {
         DDSMsg_t dds_msg;
-        // dds_impl::convert_ros_message_to_dds(msg, dds_msg);
-        // DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
-        // DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
+        dds_impl::convert_ros_message_to_dds(msg, dds_msg);
+        DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
+        DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
         // checkStatus(status, "DDSMsgDataWriter_t::write");
     }
 

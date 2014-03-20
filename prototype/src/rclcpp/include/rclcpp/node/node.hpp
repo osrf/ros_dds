@@ -1,13 +1,15 @@
 #ifndef NODE_HPP
 #define NODE_HPP
 #include <map>
+#include <list>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
 
 #include <ccpp_dds_dcps.h>
 
 #include <rclcpp/publisher/publisher.hpp>
-// #include <rclcpp/subscription/subscription.hpp>
+#include <rclcpp/subscription/subscription.hpp>
 
 #include <genidlcpp/resolver.h>
 
@@ -16,7 +18,8 @@ namespace rclcpp
 
 using publisher::Publisher;
 using publisher::PublisherInterface;
-// using subscription::Subscription;
+using subscription::Subscription;
+using subscription::SubscriptionInterface;
 
 namespace node
 {
@@ -75,21 +78,59 @@ public:
     void destroy_publisher(PublisherInterface * publisher);
     void destroy_publisher(std::string topic_name);
 
-    // template <typename T>
-    // Subscription<T> create_subscription(std::string topic_name,
-    //                                     size_t queue_size,
-    //                                     typename Subscription<T>::CallbackType cb);
+    template <typename ROSMsgType>
+    Subscription<ROSMsgType> create_subscription(std::string topic_name,
+                                                 size_t queue_size,
+                                                 typename Subscription<ROSMsgType>::CallbackType cb)
+    {
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType DDSMsgDataReader;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType_var DDSMsgDataReader_var;
+        // TODO check return status
+        DDS::ReturnCode_t status;
 
-    // template <typename T>
-    // void destroy_subscription(Subscription<T> subscription);
+        DDSMsgTypeSupport_t dds_msg_ts;
+        // checkHandle(dds_msg_ts.in(), "new DDSMsgTypeSupport");
+        char * dds_msg_name = dds_msg_ts.get_type_name();
+        status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
+
+        DDS::Subscriber_var dds_subscriber = this->participant_->create_subscriber(
+            this->default_subscriber_qos_, NULL, DDS::STATUS_MASK_NONE);
+
+        DDS::Topic_var dds_topic = this->participant_->create_topic(
+            topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
+            DDS::STATUS_MASK_NONE
+        );
+
+        DDS::DataReader_var topic_reader = dds_subscriber->create_datareader(
+            dds_topic.in(), DATAREADER_QOS_USE_TOPIC_QOS,
+            NULL, DDS::STATUS_MASK_NONE);
+
+        DDSMsgDataReader_var data_reader = DDSMsgDataReader::_narrow(topic_reader.in());
+
+        Subscription<ROSMsgType> subscription(data_reader, cb);
+        SubscriptionInterface *subscription_if = &subscription;
+        this->subscriptions_.push_back(subscription_if);
+        return subscription;
+    };
+
+    template <typename ROSMsgType>
+    void destroy_subscription(Subscription<ROSMsgType> subscription);
+
+    void wait();
 private:
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
     DDS::DomainParticipant_var participant_;
     DDS::TopicQos default_topic_qos_;
     DDS::PublisherQos default_publisher_qos_;
+    DDS::SubscriberQos default_subscriber_qos_;
 
     std::map<std::string, PublisherInterface* > publishers_;
+    std::list<SubscriptionInterface *> subscriptions_;
+    boost::thread *subscription_watcher_th;
+
+    void subscription_watcher();
 };
 
 }
