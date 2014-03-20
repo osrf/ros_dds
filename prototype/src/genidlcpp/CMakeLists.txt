@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS genmsg)
 file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include)
 
 catkin_package(
-  INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include
+  INCLUDE_DIRS include ${CATKIN_DEVEL_PREFIX}/include
   CATKIN_DEPENDS genmsg
   CFG_EXTRAS genidlcpp-extras.cmake
 )

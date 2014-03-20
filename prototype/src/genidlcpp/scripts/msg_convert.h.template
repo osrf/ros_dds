@@ -20,6 +20,14 @@ void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_m
 
 void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message);
 
+template<>
+struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
+{
+  typedef @(spec.package)::dds_impl::@(spec.short_name)_ DDSMsgType;
+  typedef @(spec.package)::dds_impl::@(spec.short_name)_TypeSupport DDSMsgTypeSupportType;
+  typedef @(spec.package)::dds_impl::@(spec.short_name)_DataWriter DDSMsgDataWriterType;
+};
+
 }; // namespace dds_impl
 
 #endif
