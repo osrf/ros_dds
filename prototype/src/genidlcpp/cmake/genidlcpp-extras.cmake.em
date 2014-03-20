@@ -83,6 +83,7 @@ macro(_generate_srv_idlcpp ARG_PKG ARG_SRV ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
 endmacro()
 
 macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
+  include_directories(BEFORE ${genidlcpp_INCLUDE_DIRS})
   list(REMOVE_DUPLICATES ${ARG_PKG}_MSG_DEPENDENCIES)
   foreach(dep ${${ARG_PKG}_MSG_DEPENDENCIES})
     include_directories(BEFORE ${CATKIN_DEVEL_PREFIX}/include/${dep}/dds_impl)

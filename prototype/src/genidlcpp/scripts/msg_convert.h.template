@@ -12,6 +12,9 @@
 
 #include "@(spec.package)/@(spec.short_name).h"
 #include "@(spec.package)/dds_impl/@(spec.short_name)_.h"
+#include "@(spec.package)/dds_impl/@(spec.short_name)_Dcps_impl.h"
+
+#include "genidlcpp/resolver.h"
 
 namespace dds_impl
 {
