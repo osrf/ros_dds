@@ -28,7 +28,9 @@ struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
 {
   typedef @(spec.package)::dds_impl::@(spec.short_name)_ DDSMsgType;
   typedef @(spec.package)::dds_impl::@(spec.short_name)_TypeSupport DDSMsgTypeSupportType;
+  typedef @(spec.package)::dds_impl::@(spec.short_name)_TypeSupport_var DDSMsgTypeSupportType_var;
   typedef @(spec.package)::dds_impl::@(spec.short_name)_DataWriter DDSMsgDataWriterType;
+  typedef @(spec.package)::dds_impl::@(spec.short_name)_DataWriter_var DDSMsgDataWriterType_var;
 };
 
 }; // namespace dds_impl

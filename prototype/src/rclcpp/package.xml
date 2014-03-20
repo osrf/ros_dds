@@ -9,4 +9,6 @@
 
   <buildtool_depend version_gte="0.5.78">catkin</buildtool_depend>
 
+  <build_depend>genidlcpp</build_depend>
+
 </package>

@@ -9,7 +9,9 @@ struct DDSTypeResolver
 {
   typedef void* DDSMsgType;
   typedef void* DDSMsgTypeSupportType;
+  typedef void* DDSMsgTypeSupportType_var;
   typedef void* DDSMsgDataWriter;
+  typedef void* DDSMsgDataWriter_var;
 };
 } // namespace dds_impl
 
