@@ -1,4 +1,0 @@
-struct ROSMessage {
-    string data;
-};
-#pragma keylist ROSMessage
