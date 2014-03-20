@@ -1,13 +1,22 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node/node.hpp>
 #include <ccpp_dds_dcps.h>
+#include <signal.h>
 //#include <boost/thread.hpp>
 
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
+bool running;
+
+static void catch_function(int signo) {
+    running = false;
+    std::cout << "Catching Ctrl-C, shutting down..." << std::endl;
+}
+
 Node::Node(std::string name)
 {
+    running = true;
     this->name_ = name;
     this->dpf_ = DDS::DomainParticipantFactory::get_instance();
     // checkHandle(this->dpf_.in(), "DDS::DomainParticipantFactory::get_instance");
@@ -36,11 +45,17 @@ Node::Node(std::string name)
     this->default_subscriber_qos_.partition.name[0] = "ros_partition";
 
     this->subscription_watcher_th = new boost::thread(boost::bind(&Node::subscription_watcher, this));
+
+    /* Register a signal handler so DDS doesn't just sit there... */
+    if (signal(SIGINT, catch_function) == SIG_ERR)
+    {
+        fputs("An error occurred while setting a signal handler.\n", stderr);
+    }
 }
 
 void Node::subscription_watcher()
 {
-    while(true)
+    while(running)
     {
         std::list<rclcpp::SubscriptionInterface *>::const_iterator iterator;
         for (iterator = this->subscriptions_.begin(); iterator != this->subscriptions_.end(); ++iterator) {
