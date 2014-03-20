@@ -47,10 +47,16 @@ protected:
 
 };
 
-template <typename ROSMsgType, typename DDSMsg_t, typename DDSMsgDataWriter_var, typename DDSMsgDataWriter_t>
+template <typename ROSMsgType>
 class Publisher : public PublisherInterface
 {
 private:
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_var;
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType_var DDSMsgTypeSupport_var;
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType DDSMsgDataWriter_t;
+    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType_var DDSMsgDataWriter_var;
     friend class node::Node;
     Publisher(std::string topic_name, size_t queue_size,
               DDS::Publisher_var dds_publisher,

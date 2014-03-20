@@ -27,9 +27,15 @@ public:
     Node(std::string name);
     ~Node();
 
-    template <typename ROSMsgType, typename DDSMsgTypeSupport_t, typename DDSMsg_t, typename DDSMsgDataWriter_var, typename DDSMsgDataWriter_t>
-    Publisher<ROSMsgType, DDSMsg_t, DDSMsgDataWriter_var, DDSMsgDataWriter_t> create_publisher(std::string topic_name, size_t queue_size)
+    template <typename ROSMsgType>
+    Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
     {
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_var;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType_var DDSMsgTypeSupport_var;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType DDSMsgDataWriter_t;
+        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType_var DDSMsgDataWriter_var;
         // TODO check return status
         DDS::ReturnCode_t status;
 
@@ -63,7 +69,7 @@ public:
 
         // this->publishers_.inse/rt(std::pair<std::string, boost::shared_ptr<PublisherInterface> >(topic_name, publisher));
         // return *(dynamic_cast<const Publisher<ROSMsgType> *>(this->publishers_.at(topic_name).get()));
-        return Publisher<ROSMsgType, DDSMsg_t, DDSMsgDataWriter_var, DDSMsgDataWriter_t>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
+        return Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
     }
 
     void destroy_publisher(PublisherInterface * publisher);
