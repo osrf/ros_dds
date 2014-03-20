@@ -30,12 +30,12 @@ included_dcps = False
 for field in spec.parsed_fields():
   if not field.is_builtin:
     if field.is_header:
-      print('#include "std_msgs/dds_idl/Header.idl";')
+      print('#include "std_msgs/dds_idl/Header_.idl";')
     else:
       (package, name) = genmsg.names.package_resource_name(field.base_type)
       package = package or spec.package # convert '' to package
       if (package, name) not in included:
-        print('#include "%s/dds_idl/%s.idl";' % (package, name))
+        print('#include "%s/dds_idl/%s_.idl";' % (package, name))
         included.add((package, name))
   elif field.type in ['duration', 'time']:
     if not included_dcps:

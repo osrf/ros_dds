@@ -21,17 +21,17 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
   get_filename_component(MSG_NAME ${ARG_MSG} NAME)
   get_filename_component(MSG_SHORT_NAME ${ARG_MSG} NAME_WE)
 
-  set(IDL_INPUT_FILE "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${ARG_PKG}/dds_idl/${MSG_SHORT_NAME}.idl")
+  set(IDL_INPUT_FILE "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${ARG_PKG}/dds_idl/${MSG_SHORT_NAME}_.idl")
   set(GEN_OUTPUT_FILES
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}.h"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}.cpp"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps.h"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps.cpp"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps_impl.h"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Dcps_impl.cpp"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}SplDcps.h"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}SplDcps.cpp"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/ccpp_${MSG_SHORT_NAME}.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_Dcps.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_Dcps.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_Dcps_impl.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_Dcps_impl.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_SplDcps.h"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_SplDcps.cpp"
+    "${ARG_GEN_OUTPUT_DIR}/dds_impl/ccpp_${MSG_SHORT_NAME}_.h"
   )
 
   set(IDL_DEPS "")
@@ -40,7 +40,7 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
     get_filename_component(dep_pkg ${dep} PATH)
     get_filename_component(dep_pkg ${dep_pkg} PATH)
     get_filename_component(dep_pkg ${dep_pkg} NAME)
-    list(APPEND IDL_DEPS "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${dep_pkg}/dds_idl/${dep_name}.idl")
+    list(APPEND IDL_DEPS "${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_SHARE_DESTINATION}/${dep_pkg}/dds_idl/${dep_name}_.idl")
     list(APPEND ${ARG_PKG}_MSG_DEPENDENCIES "${dep_pkg}")
   endforeach()
 
@@ -52,7 +52,7 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
   add_custom_command(OUTPUT ${GEN_OUTPUT_FILES}
     DEPENDS ${IDL_DEPS} ${IDL_INPUT_FILE}
     COMMAND ${COMMAND}
-    COMMENT "Generating DDS C++ code from ${ARG_PKG}/${MSG_SHORT_NAME}.idl"
+    COMMENT "Generating DDS C++ code from ${ARG_PKG}/${MSG_SHORT_NAME}_.idl"
     )
   list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILES})
 

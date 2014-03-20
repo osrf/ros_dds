@@ -18,7 +18,7 @@ macro(_generate_msg_idl ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPUT_D
   get_filename_component(MSG_NAME ${ARG_MSG} NAME)
   get_filename_component(MSG_SHORT_NAME ${ARG_MSG} NAME_WE)
 
-  set(MSG_GENERATED_NAME ${MSG_SHORT_NAME}.idl)
+  set(MSG_GENERATED_NAME ${MSG_SHORT_NAME}_.idl)
   set(GEN_OUTPUT_FILE ${GEN_OUTPUT_DIR}/${MSG_GENERATED_NAME})
 
   assert(CATKIN_ENV)

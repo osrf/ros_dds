@@ -11,7 +11,7 @@
 #define __@(spec.package)__@(spec.short_name)__convert__h__
 
 #include "@(spec.package)/@(spec.short_name).h"
-#include "@(spec.package)/dds_impl/@(spec.short_name).h"
+#include "@(spec.package)/dds_impl/@(spec.short_name)_.h"
 
 namespace dds_impl
 {
