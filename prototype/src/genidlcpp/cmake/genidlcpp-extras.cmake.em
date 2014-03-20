@@ -88,6 +88,7 @@ macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
     include_directories(BEFORE ${CATKIN_DEVEL_PREFIX}/include/${dep}/dds_impl)
   endforeach()
   add_library(${PROJECT_NAME}_dds_msgs ${ARGN})
+  target_link_libraries(${PROJECT_NAME}_dds_msgs ${OPENSPLICE_LIBRARIES})
 endmacro()
 
 set(genidlcpp_INSTALL_DIR include)

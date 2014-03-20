@@ -11,4 +11,3 @@ catkin_package()
 
 add_executable(foo src/main.cpp)
 add_dependencies(foo ${catkin_EXPORTED_TARGETS})
-target_link_libraries(foo std_msgs_dds_msgs ${catkin_LIBRARIES} ${OPENSPLICE_LIBRARIES})
