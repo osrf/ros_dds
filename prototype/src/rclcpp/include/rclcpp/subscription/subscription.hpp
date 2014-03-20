@@ -3,9 +3,9 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <genidlcpp/resolver.h>
-
 #include <ccpp_dds_dcps.h>
+
+#include <genidlcpp/resolver.h>
 
 namespace rclcpp
 {
@@ -61,4 +61,5 @@ namespace rclcpp
         };
     }
 }
+
 #endif

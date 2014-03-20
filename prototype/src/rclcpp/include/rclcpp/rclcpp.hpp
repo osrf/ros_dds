@@ -7,7 +7,7 @@ namespace rclcpp
 {
     typedef node::Node Node;
     using publisher::Publisher;
-    // using subscription::Subscription;
+    using subscription::Subscription;
 
     void init(int argc, char** argv);
     void init(std::list<std::string> args);

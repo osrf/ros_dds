@@ -6,4 +6,7 @@
     local-name: std_msgs
     uri: https://github.com/ros/std_msgs.git
     version: 0.5.8
-
+- git:
+    local-name: catkin
+    uri: https://github.com/ros/catkin.git
+    version: project_name_libraries
