@@ -14,6 +14,5 @@ catkin_package(
     CATKIN_DEPENDS genidlcpp
 )
 
-
 add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
 target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES} ${Boost_LIBRARIES})

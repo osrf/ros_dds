@@ -12,13 +12,16 @@ Current functionality
 * `genidlcpp`
   * generates DDS C++ code from idl files
   * the result is placed under include/PKGNAME/dds_impl/*
+* `rclcpp` (ROS Client Library C++)
+  * provides `<rclcpp/rclcpp.h>` as single entry point to nodes and pub/sub
 
 How to build
 ------------
 
 * `./checkout`
 
-  Clones `std_msgs` and `common_msgs` into the workspace.
+  Clones `std_msgs` and `common_msgs` into the workspace as well as a patched version of catkin.
+  This command requires the `vcs` tool, `sudo apt-get install python-vcstool` or `sudo pip install vcstool`.
 
 * `source /opt/ros/hydro/setup.bash`
 
@@ -27,6 +30,7 @@ How to build
 * `source /SOMEWHERE/release.com`
 
   To get the OpenSplice environment.
+  There is also the `my_setup.sh` in the `prototype` folder, which can be modified for your use and sourced instead.
 
 * `catkin_make`
 
