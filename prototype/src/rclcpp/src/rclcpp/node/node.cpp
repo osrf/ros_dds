@@ -1,3 +1,4 @@
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node/node.hpp>
 #include <ccpp_dds_dcps.h>
 
@@ -11,6 +12,7 @@ Node::Node(std::string name)
     // XXX move this code to create_node?
     this->name_ = name;
     this->dpf_ = DDS::DomainParticipantFactory::get_instance();
+    
     DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
 
     this->participant_ = this->dpf_->create_participant(
@@ -24,6 +26,8 @@ Node::~Node() {
 
 Publisher Node::create_publisher(std::string topic_name, size_t queue_size)
 {
+    // TODO check that topic_name is valid (i.e. no slashes)
+
     // TODO check return status
     DDS::ReturnCode_t status;
 
