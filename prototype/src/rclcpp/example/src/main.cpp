@@ -9,10 +9,10 @@ int main(int argc, char** argv)
 
     rclcpp::Node node = rclcpp::create_node("example");
 
-    rclcpp::Publisher<std_msgs::Int32> publisher = node.create_publisher<std_msgs::Int32>("temp", 0);
+    typedef dds_impl::DDSTypeResolver<std_msgs::Int32> r;
+    rclcpp::Publisher<std_msgs::Int32, r::DDSMsgType, r::DDSMsgDataWriterType_var, r::DDSMsgDataWriterType> publisher = node.create_publisher<std_msgs::Int32, r::DDSMsgTypeSupportType, r::DDSMsgType, r::DDSMsgDataWriterType_var, r::DDSMsgDataWriterType>("temp", 0);
 
     std_msgs::Int32 msg;
     msg.data = 2;
     publisher.publish(msg);
-
 }

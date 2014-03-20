@@ -19,9 +19,11 @@
 namespace dds_impl
 {
 
-void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message);
+template <>
+void convert_ros_message_to_dds<@(spec.package)::@(spec.short_name), @(spec.package)::dds_impl::@(spec.short_name)_>(const @(spec.package)::@(spec.short_name)& ros_message, @(spec.package)::dds_impl::@(spec.short_name)_& dds_message);
 
-void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message);
+template <>
+void convert_dds_message_to_ros<@(spec.package)::dds_impl::@(spec.short_name)_, @(spec.package)::@(spec.short_name)>(const @(spec.package)::dds_impl::@(spec.short_name)_& dds_message, @(spec.package)::@(spec.short_name)& ros_message);
 
 template<>
 struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>

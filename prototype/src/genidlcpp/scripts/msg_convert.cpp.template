@@ -57,7 +57,7 @@ void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_m
       dds_message.@(field.name)_[i] = ros_message.@(field.name)[i].c_str();
 @[elif field.is_builtin]@
       dds_message.@(field.name)_[i] = ros_message.@(field.name)[i];
-@[else]@
+@[elif 'Dimension' not in field.type]@
       convert_ros_message_to_dds(ros_message.@(field.name)[i], dds_message.@(field.name)_[i]);
 @[end if]@
     }
@@ -70,7 +70,7 @@ void convert_ros_message_to_dds(const @(spec.package)::@(spec.short_name)& ros_m
 @[elif field.is_builtin]@
   dds_message.@(field.name)_ = ros_message.@(field.name);
 @[else]@
-  convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
+  //convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
 @[end if]@
 
 @[end for]@
@@ -104,7 +104,7 @@ void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_na
       ros_message.@(field.name)[i].nsec = dds_message.@(field.name)_[i].nanosec;
 @[elif field.is_builtin]@
       ros_message.@(field.name)[i] = dds_message.@(field.name)_[i];
-@[else]@
+@[elif 'Dimension' not in field.type]@
       convert_dds_message_to_ros(dds_message.@(field.name)_[i], ros_message.@(field.name)[i]);
 @[end if]@
     }
@@ -115,7 +115,7 @@ void convert_dds_message_to_ros(const @(spec.package)::dds_impl::@(spec.short_na
 @[elif field.is_builtin]@
   ros_message.@(field.name) = dds_message.@(field.name)_;
 @[else]@
-  convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
+  //convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
 @[end if]@
 
 @[end for]@

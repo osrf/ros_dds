@@ -27,22 +27,16 @@ public:
     Node(std::string name);
     ~Node();
 
-    template <typename ROSMsgType>
-    Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
+    template <typename ROSMsgType, typename DDSMsgTypeSupport_t, typename DDSMsg_t, typename DDSMsgDataWriter_var, typename DDSMsgDataWriter_t>
+    Publisher<ROSMsgType, DDSMsg_t, DDSMsgDataWriter_var, DDSMsgDataWriter_t> create_publisher(std::string topic_name, size_t queue_size)
     {
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType_var DDSMsgTypeSupport_var;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType DDSMsgDataWriter_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType_var DDSMsgDataWriter_var;
-
         // TODO check return status
         DDS::ReturnCode_t status;
 
-        DDSMsgTypeSupport_var dds_msg_ts = new DDSMsgTypeSupport_t();
+        DDSMsgTypeSupport_t dds_msg_ts;
         // checkHandle(dds_msg_ts.in(), "new DDSMsgTypeSupport");
-        char * dds_msg_name = dds_msg_ts->get_type_name();
-        status = dds_msg_ts->register_type(this->participant_.in(), dds_msg_name);
+        char * dds_msg_name = dds_msg_ts.get_type_name();
+        status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
         // checkStatus(status, "TypeSupport::register_type");
 
         DDS::Publisher_var dds_publisher = this->participant_->create_publisher(
@@ -69,7 +63,7 @@ public:
 
         // this->publishers_.inse/rt(std::pair<std::string, boost::shared_ptr<PublisherInterface> >(topic_name, publisher));
         // return *(dynamic_cast<const Publisher<ROSMsgType> *>(this->publishers_.at(topic_name).get()));
-        return Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
+        return Publisher<ROSMsgType, DDSMsg_t, DDSMsgDataWriter_var, DDSMsgDataWriter_t>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
     }
 
     void destroy_publisher(PublisherInterface * publisher);
