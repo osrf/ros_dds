@@ -60,7 +60,6 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
 
   set(GEN_OUTPUT_FILES
     "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.h"
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.cpp"
   )
 
   set(COMMAND ${GENIDLCPP_BIN} ${ARG_MSG} ${ARG_PKG} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR})
@@ -70,7 +69,7 @@ macro(_generate_msg_idlcpp ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPU
 
   assert(CATKIN_ENV)
   add_custom_command(OUTPUT ${GEN_OUTPUT_FILES}
-    DEPENDS ${GENIDLCPP_BIN} ${ARG_MSG} "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.h.template" "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.cpp.template"
+    DEPENDS ${GENIDLCPP_BIN} ${ARG_MSG} "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.h.template"
     COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${COMMAND}
     COMMENT "Generating conversion code between ROS and DDS message instances for ${ARG_PKG}/${MSG_NAME}"
     )

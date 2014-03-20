@@ -8,8 +8,7 @@ import genmsg.template_tools
 import os
 
 convert_template_map = {
-    'msg_convert.h.template': '@NAME@_convert.h',
-    'msg_convert.cpp.template': '@NAME@_convert.cpp'
+    'msg_convert.h.template': '@NAME@_convert.h'
 }
 
 # ${ARG_MSG} ${ARG_PKG} ${MSG_SHORT_NAME} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR}

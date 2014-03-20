@@ -48,7 +48,7 @@ namespace rclcpp
                 for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
                 {
                     ROSMsgType ros_msg;
-                    dds_impl::convert_dds_message_to_ros(dds_msg_seq[i], ros_msg);
+                    dds_impl::DDSTypeResolver<ROSMsgType>::convert_dds_message_to_ros(dds_msg_seq[i], ros_msg);
                     this->cb_(ros_msg);
                 }
 

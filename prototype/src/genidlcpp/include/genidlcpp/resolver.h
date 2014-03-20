@@ -16,13 +16,11 @@ struct DDSTypeResolver
   typedef void* DDSMsgDataWriter_var;
   typedef void* DDSMsgDataReader;
   typedef void* DDSMsgDataReader_var;
+
+  static void convert_ros_message_to_dds(void*, void*);
+
+  static void convert_dds_message_to_ros(void*, void*);
 };
-
-template <typename T, typename U>
-void convert_ros_message_to_dds(const T&, U&);
-
-template <typename T, typename U>
-void convert_dds_message_to_ros(const T&, U&);
 
 } // namespace dds_impl
 
