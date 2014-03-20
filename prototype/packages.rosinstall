@@ -1,4 +1,8 @@
 - git:
+    local-name: catkin
+    uri: https://github.com/ros/catkin.git
+    version: indigo-devel
+- git:
     local-name: common_msgs
     uri: https://github.com/ros/common_msgs.git
     version: 1.11.0
@@ -6,7 +10,3 @@
     local-name: std_msgs
     uri: https://github.com/ros/std_msgs.git
     version: 0.5.8
-- git:
-    local-name: catkin
-    uri: https://github.com/ros/catkin.git
-    version: project_name_libraries
