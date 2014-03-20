@@ -18,3 +18,13 @@
 *.app
 *.sublime-workspace
 build
+
+# IDL-generated files
+*/idl/*.cpp
+*/idl/*.h
+
+# Vagrant and Puppet files
+.vagrant
+puppet/.librarian
+puppet/.tmp
+puppet/Puppetfile.lock
