@@ -10,3 +10,7 @@
     local-name: std_msgs
     uri: https://github.com/ros/std_msgs.git
     version: 0.5.8
+- git:
+    local-name: ros_comm_msgs/std_srvs
+    uri: https://github.com/ros-gbp/ros_comm_msgs-release.git
+    version: release/indigo/std_srvs/1.10.1-1
