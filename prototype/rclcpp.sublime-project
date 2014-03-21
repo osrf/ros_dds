@@ -10,6 +10,7 @@
 	{
 		"sublimeclang_options":
 		[
+			"-Wno-c++11-extensions",
 			"-I/usr/include",
 			"-I/usr/local/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclc/include",
@@ -20,6 +21,6 @@
 			"-I/usr/local/opt/opensplice/include/opensplice",
 			"-I/usr/local/opt/opensplice/include/opensplice/sys",
 			"-I/usr/local/opt/opensplice/include/opensplice/dcps/C++/SACPP",
-		]
+		],
 	}
 }

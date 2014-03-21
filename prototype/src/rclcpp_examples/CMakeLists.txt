@@ -5,6 +5,8 @@ find_package(catkin REQUIRED COMPONENTS rclcpp std_msgs)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
+set(CMAKE_CXX_FLAGS "-Wno-c++11-extensions")
+
 catkin_package()
 
 add_executable(talker src/talker.cpp)
