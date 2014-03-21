@@ -114,6 +114,12 @@ public:
         return subscription;
     };
 
+    template <typename ROSRequestType, typename ROSResponseType>
+    Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service::CallbackType<ROSRequestType, ROSResponseType> cb);
+
+    template <typename ROSRequestType, typename ROSResponseType>
+    Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name);
+
     template <typename ROSMsgType>
     void destroy_subscription(Subscription<ROSMsgType> subscription);
 
