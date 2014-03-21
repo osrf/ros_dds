@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node node = rclcpp::create_node("listener");
-    rclcpp::Subscription<std_msgs::String> subscription = node.create_subscription<std_msgs::String>("chatter", 10, callback);
+    auto subscription = node.create_subscription<std_msgs::String>("chatter", 10, callback);
     node.wait();
     return 0;
 }
