@@ -172,6 +172,12 @@ public:
         return std::dynamic_pointer_cast<Sub>(sub);
     };
 
+    template <typename ROSRequestType, typename ROSResponseType>
+    Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service::CallbackType<ROSRequestType, ROSResponseType> cb);
+
+    template <typename ROSRequestType, typename ROSResponseType>
+    Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name);
+
     /* Destroys a subscription by reference */
     template <typename ROSMsgType>
     void destroy_subscription(const typename subscription::Subscription<ROSMsgType>::Ptr subscription)
