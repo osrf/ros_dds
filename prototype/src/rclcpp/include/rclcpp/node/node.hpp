@@ -207,8 +207,11 @@ public:
     template <typename ROSRequestType, typename ROSResponseType>
     Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name)
     {
-        Client<ROSRequestType, ROSResponseType> client(this);
+        Publisher<ROSRequestType> publisher = this->create_publisher<ROSRequestType>(service_name + ".request", 0);
+        boost::uuids::uuid client_id = boost::uuids::random_generator()();
+        Client<ROSRequestType, ROSResponseType> client(client_id, &publisher);
         // XXX hardcoded queue_size
+        boost::shared_ptr< boost::promise<const ROSResponseType &> > call_promise;
         typename Subscription<ROSResponseType>::CallbackType f(boost::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
 
         Subscription<ROSResponseType> response_subscription = this->create_subscription<ROSResponseType>(service_name + ".response", 10, f);
