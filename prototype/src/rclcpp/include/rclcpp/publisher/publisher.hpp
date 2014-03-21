@@ -1,12 +1,13 @@
 #ifndef PUBLISHER_HPP
 #define PUBLISHER_HPP
+#include <exception>
 #include <string>
 
 #include <ccpp.h>
 
 #include <genidlcpp/resolver.h>
 
-// #include <rclcpp/impl/check_status.h>
+#include <rclcpp/impl/check_status.h>
 
 namespace rclcpp
 {
@@ -16,6 +17,14 @@ namespace node {class Node;}
 
 namespace publisher
 {
+
+class DuplicatePublisherException : public std::exception
+{
+    virtual const char* what() const throw()
+    {
+        return "Publisher for topic already exists";
+    }
+};
 
 class PublisherInterface
 {
@@ -63,7 +72,7 @@ private:
     : PublisherInterface(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter)
     {
         this->data_writer_ = DDSMsgDataWriter_t::_narrow(this->dds_topic_datawriter_.in());
-        // TODO: Check result of _narrow
+        checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
     }
 public:
     ~Publisher() {}
@@ -74,7 +83,7 @@ public:
         dds_impl::DDSTypeResolver<ROSMsgType>::convert_ros_message_to_dds(msg, dds_msg);
         DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
         DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
-        // checkStatus(status, "DDSMsgDataWriter_t::write");
+        checkStatus(status, "DDSMsgDataWriter_t::write");
     }
 
 private:

@@ -1,8 +1,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node/node.hpp>
 #include <ccpp_dds_dcps.h>
+
+#include <iostream>
+
 #include <signal.h>
-//#include <boost/thread.hpp>
 
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
@@ -44,8 +46,6 @@ Node::Node(std::string name)
     this->default_subscriber_qos_.partition.name.length(1);
     this->default_subscriber_qos_.partition.name[0] = "ros_partition";
 
-    this->subscription_watcher_th = new boost::thread(boost::bind(&Node::subscription_watcher, this));
-
     /* Register a signal handler so DDS doesn't just sit there... */
     if (signal(SIGINT, catch_function) == SIG_ERR)
     {
@@ -53,26 +53,24 @@ Node::Node(std::string name)
     }
 }
 
-void Node::subscription_watcher()
+void Node::spin()
 {
     while(running)
     {
-        std::list<rclcpp::SubscriptionInterface *>::const_iterator iterator;
-        for (iterator = this->subscriptions_.begin(); iterator != this->subscriptions_.end(); ++iterator) {
-            (*iterator)->spin();
-        }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+        this->spin_once();
     }
 }
 
-void Node::wait()
+void Node::spin_once()
 {
-    this->subscription_watcher_th->join();
+    for (auto iterator = this->subscriptions_.cbegin(); iterator != this->subscriptions_.cend(); ++iterator)
+    {
+        (*iterator)->spin_once();
+    }
 }
 
 Node::~Node() {
     this->dpf_->delete_participant(this->participant_);
-    delete this->subscription_watcher_th;
 }
 
 void Node::destroy_publisher(PublisherInterface * publisher)

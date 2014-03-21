@@ -4,7 +4,7 @@
 #include "ccpp_dds_dcps.h"
 #include <iostream>
 
-const char *RetCodeName[13] = {
+static const char *RetCodeName[13] = {
     "DDS_RETCODE_OK",
     "DDS_RETCODE_ERROR",
     "DDS_RETCODE_UNSUPPORTED",
@@ -20,12 +20,12 @@ const char *RetCodeName[13] = {
     "DDS_RETCODE_ILLEGAL_OPERATION"
 };
 
-const char * getErrorName(DDS::ReturnCode_t status)
+inline const char * getErrorName(DDS::ReturnCode_t status)
 {
     return RetCodeName[status];
 }
 
-void checkStatus(DDS::ReturnCode_t status, const char *info)
+inline void checkStatus(DDS::ReturnCode_t status, const char *info)
 {
     if (status != DDS::RETCODE_OK && status != DDS::RETCODE_NO_DATA)
     {
@@ -34,7 +34,7 @@ void checkStatus(DDS::ReturnCode_t status, const char *info)
     }
 }
 
-void checkHandle(void *handle, const char *info)
+inline void checkHandle(void *handle, const char *info)
 {
     if (!handle)
     {

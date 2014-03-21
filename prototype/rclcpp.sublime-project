@@ -11,8 +11,7 @@
 		"sublimeclang_options":
 		[
 			"-Wno-c++11-extensions",
-			"-I/usr/include",
-			"-I/usr/local/include",
+			"-I/Users/william/hydro/install/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclc/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclcpp/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/genidlcpp/include",
@@ -21,6 +20,10 @@
 			"-I/usr/local/opt/opensplice/include/opensplice",
 			"-I/usr/local/opt/opensplice/include/opensplice/sys",
 			"-I/usr/local/opt/opensplice/include/opensplice/dcps/C++/SACPP",
+			"-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/c++/v1",
+			"-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/5.1/include",
+			"-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/5.1/include",
+			"-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
 		],
 	}
 }

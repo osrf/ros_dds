@@ -1,7 +1,7 @@
 #ifndef SUBSCRIPTION_HPP
 #define SUBSCRIPTION_HPP
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <ccpp_dds_dcps.h>
 
@@ -14,7 +14,7 @@ namespace rclcpp
         class SubscriptionInterface
         {
             public:
-                virtual void spin() = 0;
+                virtual void spin_once() = 0;
         };
 
         template <typename ROSMsgType>
@@ -24,7 +24,7 @@ namespace rclcpp
             typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgSeqType DDSMsgSeqType;
             typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgSeqType_var DDSMsgSeqType_var;
             typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType_var DDSMsgDataReader_var;
-            typedef boost::shared_ptr<const ROSMsgType> msg_shared_ptr;
+            typedef std::shared_ptr<const ROSMsgType> msg_shared_ptr;
             typedef void (*CallbackType)(const ROSMsgType &msg);
             typedef void (*SharedPtrCallbackType)(const msg_shared_ptr msg);
 
@@ -32,7 +32,7 @@ namespace rclcpp
             ~Subscription() {}
 
 
-            void spin()
+            void spin_once()
             {
                 DDSMsgSeqType_var dds_msg_seq = new DDSMsgSeqType();
                 DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();

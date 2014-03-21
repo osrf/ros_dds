@@ -7,7 +7,7 @@
 
 void callback(const std_msgs::String &msg)
 {
-    std::cout << "Received message: " << msg << std::endl;
+    std::cout << "Received message: " << msg.data << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -15,7 +15,10 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node node = rclcpp::create_node("listener");
+
     auto subscription = node.create_subscription<std_msgs::String>("chatter", 10, callback);
-    node.wait();
+
+    node.spin();
+
     return 0;
 }

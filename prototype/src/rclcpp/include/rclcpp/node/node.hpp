@@ -1,87 +1,80 @@
-#ifndef NODE_HPP
-#define NODE_HPP
-#include <map>
-#include <list>
+#ifndef RCLCPP_NODE_NODE__HPP
+#define RCLCPP_NODE_NODE__HPP
 
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <list>
+#include <map>
+#include <memory>
 
 #include <ccpp_dds_dcps.h>
+
+#include <genidlcpp/resolver.h>
 
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
 
-#include <genidlcpp/resolver.h>
-
 namespace rclcpp
 {
-
-using publisher::Publisher;
-using publisher::PublisherInterface;
-using subscription::Subscription;
-using subscription::SubscriptionInterface;
 
 namespace node
 {
 
+/* This class represents a single, addressable node in the ROS computation graph
+ *
+ * The Node class is the single point of entry into the ROS graph.
+ * Upon creation, a Node is visible in the ROS Graph, and can be introspected
+ * by others in the ROS graph.
+ * The Node class is the single point of entry for things like creating
+ * publishers, making subscriptions, providing services, using services, etc.
+ */
 class Node
 {
+private:
+    friend Node create_node(const std::string &name);
 public:
     Node(std::string name);
     ~Node();
 
     template <typename ROSMsgType>
-    Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
+    publisher::Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
     {
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_var;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType_var DDSMsgTypeSupport_var;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType DDSMsgDataWriter_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType_var DDSMsgDataWriter_var;
-        // TODO check return status
-        DDS::ReturnCode_t status;
+        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
 
-        DDSMsgTypeSupport_t dds_msg_ts;
-        // checkHandle(dds_msg_ts.in(), "new DDSMsgTypeSupport");
+        typename r::DDSMsgTypeSupportType dds_msg_ts;
         char * dds_msg_name = dds_msg_ts.get_type_name();
-        status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
-        // checkStatus(status, "TypeSupport::register_type");
+        DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
+        checkStatus(status, "TypeSupport::register_type");
 
         DDS::Publisher_var dds_publisher = this->participant_->create_publisher(
             this->default_publisher_qos_, NULL, DDS::STATUS_MASK_NONE);
-        // checkHandle(dds_publisher.in(), "DDS::DomainParticipant::create_publisher");
+        checkHandle(dds_publisher.in(), "DDS::DomainParticipant::create_publisher");
 
         DDS::Topic_var dds_topic = this->participant_->create_topic(
             topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
             DDS::STATUS_MASK_NONE
         );
-        // checkHandle(dds_topic.in(), "DDS::DomainParticipant::create_topic");
+        checkHandle(dds_topic.in(), "DDS::DomainParticipant::create_topic");
 
         DDS::DataWriter_var dds_topic_datawriter = dds_publisher->create_datawriter(
             dds_topic.in(), DATAWRITER_QOS_USE_TOPIC_QOS,
             NULL, DDS::STATUS_MASK_NONE);
-        // checkHandle(dds_topic_datawriter.in(), "DDS::Publisher::create_datawriter");
+        checkHandle(dds_topic_datawriter.in(), "DDS::Publisher::create_datawriter");
 
         if (this->publishers_.find(topic_name) != this->publishers_.end())
         {
-            // TODO Raise, already called for topic
+            throw publisher::DuplicatePublisherException();
         }
-        // boost::shared_ptr<PublisherInterface> publisher(
-            // new Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter));
-
-        // this->publishers_.inse/rt(std::pair<std::string, boost::shared_ptr<PublisherInterface> >(topic_name, publisher));
-        // return *(dynamic_cast<const Publisher<ROSMsgType> *>(this->publishers_.at(topic_name).get()));
-        return Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
+        return publisher::Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
     }
 
-    void destroy_publisher(PublisherInterface * publisher);
+    void destroy_publisher(publisher::PublisherInterface * publisher);
     void destroy_publisher(std::string topic_name);
 
     template <typename ROSMsgType>
-    Subscription<ROSMsgType> create_subscription(std::string topic_name,
-                                                 size_t queue_size,
-                                                 typename Subscription<ROSMsgType>::CallbackType cb)
+    subscription::Subscription<ROSMsgType> create_subscription(
+        std::string topic_name,
+        size_t queue_size,
+        typename subscription::Subscription<ROSMsgType>::CallbackType cb
+    )
     {
         typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
         typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType DDSMsgDataReader;
@@ -108,16 +101,17 @@ public:
 
         DDSMsgDataReader_var data_reader = DDSMsgDataReader::_narrow(topic_reader.in());
 
-        Subscription<ROSMsgType> subscription(data_reader, cb);
-        SubscriptionInterface *subscription_if = &subscription;
+        subscription::Subscription<ROSMsgType> subscription(data_reader, cb);
+        subscription::SubscriptionInterface *subscription_if = &subscription;
         this->subscriptions_.push_back(subscription_if);
         return subscription;
     };
 
     template <typename ROSMsgType>
-    void destroy_subscription(Subscription<ROSMsgType> subscription);
+    void destroy_subscription(subscription::Subscription<ROSMsgType> subscription);
 
-    void wait();
+    void spin();
+    void spin_once();
 private:
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
@@ -126,13 +120,13 @@ private:
     DDS::PublisherQos default_publisher_qos_;
     DDS::SubscriberQos default_subscriber_qos_;
 
-    std::map<std::string, PublisherInterface* > publishers_;
-    std::list<SubscriptionInterface *> subscriptions_;
-    boost::thread *subscription_watcher_th;
+    std::map<std::string, publisher::PublisherInterface* > publishers_;
+    std::list<subscription::SubscriptionInterface *> subscriptions_;
 
     void subscription_watcher();
 };
 
 }
 }
-#endif
+
+#endif /* RCLCPP_NODE_NODE__HPP */
