@@ -24,7 +24,7 @@ void init(int argc, char** argv);
  *
  * Create a new Node with a given unique name.
  */
-node::Node create_node(const std::string &name);
+node::Node::Ptr create_node(const std::string &name);
 
 }
 

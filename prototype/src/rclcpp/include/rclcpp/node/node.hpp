@@ -15,6 +15,9 @@
 namespace rclcpp
 {
 
+// Forward declaration for friend of the Node constructor
+std::shared_ptr<rclcpp::node::Node> create_node(const std::string &);
+
 namespace node
 {
 
@@ -29,51 +32,93 @@ namespace node
 class Node
 {
 private:
-    friend Node create_node(const std::string &name);
-public:
+    friend std::shared_ptr<rclcpp::node::Node> rclcpp::create_node(const std::string &name);
     Node(std::string name);
+
+    Node(const Node &) = delete;
+public:
+    typedef std::shared_ptr<Node> Ptr;
     ~Node();
 
+    /* Creates and returns a Publisher based on a ROS Msg Type and a topic name
+     *
+     * The Publisher is templated on the ROS Msg Type, and there can only be one
+     * Publisher per topic. Therefore, topics are inherently strongly typed to
+     * exactly one ROS Msg Type.
+     *
+     * In addition to the topic_name and the ROSMsgType template argument, a
+     * queue_size must be provided.
+     */
     template <typename ROSMsgType>
-    publisher::Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
+    typename publisher::Publisher<ROSMsgType>::Ptr create_publisher(const std::string &topic_name, size_t queue_size)
     {
+        /* Ensure that a publisher for this topic does not already exist */
+        if (this->publishers_.find(topic_name) != this->publishers_.end())
+        {
+            throw publisher::DuplicatePublisherException();
+        }
+
+        /* Deduce DDS types for the given ROSMsgType using the DDSTypeResolver */
         typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
 
+        /* Create a TypeSupport object for the equivalent DDS Msg Type */
         typename r::DDSMsgTypeSupportType dds_msg_ts;
         char * dds_msg_name = dds_msg_ts.get_type_name();
         DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
         checkStatus(status, "TypeSupport::register_type");
 
+        /* Create the DDS publisher obj */
         DDS::Publisher_var dds_publisher = this->participant_->create_publisher(
             this->default_publisher_qos_, NULL, DDS::STATUS_MASK_NONE);
         checkHandle(dds_publisher.in(), "DDS::DomainParticipant::create_publisher");
 
+        /* Create the DDS topic obj */
         DDS::Topic_var dds_topic = this->participant_->create_topic(
             topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
             DDS::STATUS_MASK_NONE
         );
         checkHandle(dds_topic.in(), "DDS::DomainParticipant::create_topic");
 
+        /* Create the DDS DataWriter for the DDS Msg Type */
         DDS::DataWriter_var dds_topic_datawriter = dds_publisher->create_datawriter(
             dds_topic.in(), DATAWRITER_QOS_USE_TOPIC_QOS,
             NULL, DDS::STATUS_MASK_NONE);
         checkHandle(dds_topic_datawriter.in(), "DDS::Publisher::create_datawriter");
 
-        if (this->publishers_.find(topic_name) != this->publishers_.end())
-        {
-            throw publisher::DuplicatePublisherException();
-        }
-        return publisher::Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
+        typedef publisher::Publisher<ROSMsgType> Pub;
+        typedef publisher::PublisherInterface::Ptr PubIfacePtr;
+        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter));
+
+        this->publishers_.insert(std::pair<std::string, PubIfacePtr>(topic_name, pub));
+
+        return std::dynamic_pointer_cast<Pub>(pub);
     }
 
-    void destroy_publisher(publisher::PublisherInterface * publisher);
+    /* Destroys a publisher by reference */
+    template <typename ROSMsgType>
+    void destroy_publisher(const typename publisher::Publisher<ROSMsgType>::Ptr &publisher)
+    {
+        this->destroy_publisher(publisher->get_topic_name());
+    }
+    /* Destroys a publisher by pointer to the base class */
+    void destroy_publisher(const publisher::PublisherInterface::Ptr &publisher_interface);
+    /* Destroys a publisher by topic name */
     void destroy_publisher(std::string topic_name);
 
+    /* Creates and returns a Subscription based on a ROS Msg Type and topic
+     *
+     * The subscription is templated on the ROS Msg Type.
+     *
+     * Additionally, a queue_size and callback are required. The callback
+     * should take this signature:
+     *
+     *     void callback(const ROSMsgType &msg);
+     */
     template <typename ROSMsgType>
     subscription::Subscription<ROSMsgType> create_subscription(
         std::string topic_name,
         size_t queue_size,
-        typename subscription::Subscription<ROSMsgType>::CallbackType cb
+        typename subscription::Subscription<ROSMsgType>::CallbackType callback
     )
     {
         typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
@@ -96,16 +141,23 @@ public:
 
         typename r::DDSMsgDataReaderType_var data_reader = r::DDSMsgDataReaderType::_narrow(topic_reader.in());
 
-        subscription::Subscription<ROSMsgType> subscription(data_reader, cb);
+        subscription::Subscription<ROSMsgType> subscription(data_reader, callback);
         subscription::SubscriptionInterface *subscription_if = &subscription;
         this->subscriptions_.push_back(subscription_if);
         return subscription;
     };
 
+    /* Destroys a subscription by reference */
     template <typename ROSMsgType>
-    void destroy_subscription(subscription::Subscription<ROSMsgType> subscription);
+    void destroy_subscription(const subscription::Subscription<ROSMsgType> &subscription)
+    {
+        this->subscriptions_.remove(&subscription);
+    }
 
+    /* Processes subscription callbacks, blocking until shutdown (ctrl-c) */
     void spin();
+
+    /* Process one subscription callback, if needed, and then returns */
     void spin_once();
 private:
     std::string name_;
@@ -115,7 +167,7 @@ private:
     DDS::PublisherQos default_publisher_qos_;
     DDS::SubscriberQos default_subscriber_qos_;
 
-    std::map<std::string, publisher::PublisherInterface* > publishers_;
+    std::map<std::string, publisher::PublisherInterface::Ptr > publishers_;
     std::list<subscription::SubscriptionInterface *> subscriptions_;
 
     void subscription_watcher();

@@ -29,22 +29,48 @@ class DuplicatePublisherException : public std::exception
 class PublisherInterface
 {
 public:
-    PublisherInterface(std::string topic_name, size_t queue_size,
-                       DDS::Publisher_var dds_publisher,
-                       DDS::Topic_var dds_topic,
-                       DDS::DataWriter_var dds_topic_datawriter)
+	typedef std::shared_ptr<PublisherInterface> Ptr;
+    virtual std::string get_topic_name() = 0;
+
+};
+
+template <typename ROSMsgType>
+class Publisher : public PublisherInterface
+{
+    typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
+    friend class node::Node;
+    Publisher(std::string topic_name, size_t queue_size,
+              DDS::Publisher_var dds_publisher,
+              DDS::Topic_var dds_topic,
+              DDS::DataWriter_var dds_topic_datawriter)
     : topic_name_(topic_name), queue_size_(queue_size),
       dds_publisher_(dds_publisher), dds_topic_(dds_topic),
       dds_topic_datawriter_(dds_topic_datawriter)
-    {}
-    ~PublisherInterface() {}
+    {
+        this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
+        checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
+    }
+
+    Publisher(const Publisher &) = delete;
+public:
+    typedef std::shared_ptr<Publisher<ROSMsgType> > Ptr;
+    ~Publisher() {}
+
+    void publish(const ROSMsgType &msg)
+    {
+        typename r::DDSMsgType dds_msg;
+        dds_impl::DDSTypeResolver<ROSMsgType>::convert_ros_message_to_dds(msg, dds_msg);
+        DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
+        DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
+        checkStatus(status, "DDSMsgDataWriter_t::write");
+    }
 
     std::string get_topic_name()
     {
         return this->topic_name_;
     }
 
-protected:
+private:
     std::string topic_name_;
     size_t queue_size_;
 
@@ -52,45 +78,11 @@ protected:
     DDS::Topic_var dds_topic_;
     DDS::DataWriter_var dds_topic_datawriter_;
 
-};
-
-template <typename ROSMsgType>
-class Publisher : public PublisherInterface
-{
-private:
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_var;
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType_var DDSMsgTypeSupport_var;
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType DDSMsgDataWriter_t;
-    typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataWriterType_var DDSMsgDataWriter_var;
-    friend class node::Node;
-    Publisher(std::string topic_name, size_t queue_size,
-              DDS::Publisher_var dds_publisher,
-              DDS::Topic_var dds_topic,
-              DDS::DataWriter_var dds_topic_datawriter)
-    : PublisherInterface(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter)
-    {
-        this->data_writer_ = DDSMsgDataWriter_t::_narrow(this->dds_topic_datawriter_.in());
-        checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
-    }
-public:
-    ~Publisher() {}
-
-    void publish(const ROSMsgType &msg)
-    {
-        DDSMsg_t dds_msg;
-        dds_impl::DDSTypeResolver<ROSMsgType>::convert_ros_message_to_dds(msg, dds_msg);
-        DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
-        DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
-        checkStatus(status, "DDSMsgDataWriter_t::write");
-    }
-
-private:
-    DDSMsgDataWriter_var data_writer_;
+    typename r::DDSMsgDataWriterType_var data_writer_;
 };
 
 }
+
 }
 
 #endif /* RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_ */

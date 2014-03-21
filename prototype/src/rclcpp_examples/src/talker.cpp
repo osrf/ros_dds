@@ -7,9 +7,9 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    rclcpp::Node node = rclcpp::create_node("talker");
+    auto node = rclcpp::create_node("talker");
 
-    auto publisher = node.create_publisher<std_msgs::String>("chatter", 0);
+    auto publisher = node->create_publisher<std_msgs::String>("chatter", 0);
 
     std_msgs::String msg;
     int i = 0;
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     {
         i++;
         msg.data = "Hello World!";
-        publisher.publish(msg);
+        publisher->publish(msg);
         sleep(1);
     }
 }

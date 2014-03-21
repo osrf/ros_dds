@@ -7,7 +7,7 @@ void rclcpp::init(int argc, char** argv)
     return;
 }
 
-rclcpp::node::Node rclcpp::create_node(const std::string &name)
+Node::Ptr rclcpp::create_node(const std::string &name)
 {
-    return Node(name);
+    return Node::Ptr(new Node(name));
 }

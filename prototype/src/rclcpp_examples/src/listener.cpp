@@ -5,20 +5,20 @@
 
 #include <iostream>
 
-void callback(const std_msgs::String &msg)
+void callback(std_msgs::String::ConstPtr msg)
 {
-    std::cout << "Received message: " << msg.data << std::endl;
+	std::cout << "Received message: " << msg->data << std::endl;
 }
 
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    rclcpp::Node node = rclcpp::create_node("listener");
+    auto node = rclcpp::create_node("listener");
 
-    auto subscription = node.create_subscription<std_msgs::String>("chatter", 10, callback);
+    auto subscription = node->create_subscription<std_msgs::String>("chatter", 10, callback);
 
-    node.spin();
+    node->spin();
 
     return 0;
 }
