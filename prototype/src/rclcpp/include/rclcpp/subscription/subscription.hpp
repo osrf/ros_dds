@@ -2,6 +2,8 @@
 #define SUBSCRIPTION_HPP
 
 #include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
 #include <ccpp_dds_dcps.h>
 
@@ -25,8 +27,8 @@ namespace rclcpp
             typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgSeqType_var DDSMsgSeqType_var;
             typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType_var DDSMsgDataReader_var;
             typedef boost::shared_ptr<const ROSMsgType> msg_shared_ptr;
-            typedef void (*CallbackType)(const ROSMsgType &msg);
-            typedef void (*SharedPtrCallbackType)(const msg_shared_ptr msg);
+            typedef boost::function<void (const ROSMsgType&)> CallbackType;
+            typedef boost::function<void (const msg_shared_ptr)> SharedPtrCallbackType;
 
             Subscription(DDSMsgDataReader_var data_reader, CallbackType cb) : data_reader_(data_reader), cb_(cb) {}
             ~Subscription() {}

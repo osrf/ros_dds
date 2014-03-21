@@ -10,19 +10,6 @@
 
 #include <iostream>
 
-/*
-struct AddTwoIntsRequest
-{
-    std_msgs::Int32 a;
-    std_msgs::Int32 b;
-};
-
-struct AddTwoIntsResponse
-{
-    std_msgs::Int32 sum;
-};
-*/
-
 bool add(std_msgs::AddTwoIntsRequest &req, std_msgs::AddTwoIntsResponse &res)
 {
     res.sum = req.a + req.b;
