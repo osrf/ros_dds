@@ -17,11 +17,17 @@ namespace rclcpp
         public:
             typedef boost::shared_ptr<const ROSRequestType> req_shared_ptr;
             typedef boost::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef void (*CallbackType)(const ROSRequestType &req, const ROSResponseType &res);
-            typedef void (*SharedPtrCallbackType)(const ROSRequestType req, const ROSResponseType res);
+            typedef bool (*CallbackType)(ROSRequestType &req, ROSResponseType &res);
+            typedef bool (*SharedPtrCallbackType)(ROSRequestType req, ROSResponseType res);
 
-            Service() {}
+            Service()
+            {
+                
+            }
+
             ~Service() {}
+
+           void handle_request(const ROSResponseType& request) {
            }
 
         private:

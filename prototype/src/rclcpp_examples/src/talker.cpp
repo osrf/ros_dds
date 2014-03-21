@@ -5,6 +5,8 @@
 #include <std_msgs/String.h>
 #include "std_msgs/dds_impl/String_convert.h"
 
+#include <rclcpp/publisher/publisher.hpp>
+
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
