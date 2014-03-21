@@ -1,6 +1,5 @@
-#ifndef SUBSCRIPTION_HPP
-#define SUBSCRIPTION_HPP
-
+#ifndef RCLCPP_RCLCPP_SUBSCRIPTION_SUBSCRIPTION_HPP_
+#define RCLCPP_RCLCPP_SUBSCRIPTION_SUBSCRIPTION_HPP_
 #include <memory>
 
 #include <ccpp_dds_dcps.h>
@@ -62,4 +61,4 @@ namespace rclcpp
     }
 }
 
-#endif
+#endif /* RCLCPP_RCLCPP_SUBSCRIPTION_SUBSCRIPTION_HPP_ */

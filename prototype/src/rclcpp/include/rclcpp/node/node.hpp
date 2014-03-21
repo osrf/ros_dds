@@ -1,5 +1,5 @@
-#ifndef RCLCPP_NODE_NODE__HPP
-#define RCLCPP_NODE_NODE__HPP
+#ifndef RCLCPP_RCLCPP_NODE_NODE_HPP_
+#define RCLCPP_RCLCPP_NODE_NODE_HPP_
 
 #include <list>
 #include <map>
@@ -76,16 +76,11 @@ public:
         typename subscription::Subscription<ROSMsgType>::CallbackType cb
     )
     {
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgTypeSupportType DDSMsgTypeSupport_t;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType DDSMsgDataReader;
-        typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgDataReaderType_var DDSMsgDataReader_var;
-        // TODO check return status
-        DDS::ReturnCode_t status;
+        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
 
-        DDSMsgTypeSupport_t dds_msg_ts;
-        // checkHandle(dds_msg_ts.in(), "new DDSMsgTypeSupport");
+        typename r::DDSMsgTypeSupportType dds_msg_ts;
         char * dds_msg_name = dds_msg_ts.get_type_name();
-        status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
+        DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
 
         DDS::Subscriber_var dds_subscriber = this->participant_->create_subscriber(
             this->default_subscriber_qos_, NULL, DDS::STATUS_MASK_NONE);
@@ -99,7 +94,7 @@ public:
             dds_topic.in(), DATAREADER_QOS_USE_TOPIC_QOS,
             NULL, DDS::STATUS_MASK_NONE);
 
-        DDSMsgDataReader_var data_reader = DDSMsgDataReader::_narrow(topic_reader.in());
+        typename r::DDSMsgDataReaderType_var data_reader = r::DDSMsgDataReaderType::_narrow(topic_reader.in());
 
         subscription::Subscription<ROSMsgType> subscription(data_reader, cb);
         subscription::SubscriptionInterface *subscription_if = &subscription;
@@ -129,4 +124,4 @@ private:
 }
 }
 
-#endif /* RCLCPP_NODE_NODE__HPP */
+#endif /* RCLCPP_RCLCPP_NODE_NODE_HPP_ */

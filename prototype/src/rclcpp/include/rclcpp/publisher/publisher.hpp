@@ -1,5 +1,5 @@
-#ifndef PUBLISHER_HPP
-#define PUBLISHER_HPP
+#ifndef RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
+#define RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
 #include <exception>
 #include <string>
 
@@ -7,7 +7,7 @@
 
 #include <genidlcpp/resolver.h>
 
-#include <rclcpp/impl/check_status.h>
+#include <rclcpp/impl/check_status.hpp>
 
 namespace rclcpp
 {
@@ -92,4 +92,5 @@ private:
 
 }
 }
-#endif
+
+#endif /* RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_ */

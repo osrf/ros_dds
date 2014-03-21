@@ -1,5 +1,6 @@
-#ifndef RCLCPP_RCLCPP__HPP
-#define RCLCPP_RCLCPP__HPP
+/*      <proj>_<path>_<file>_ext_ */
+#ifndef RCLCPP_RCLCPP_RCLCPP_HPP_
+#define RCLCPP_RCLCPP_RCLCPP_HPP_
 
 #include <string>
 
@@ -27,4 +28,4 @@ node::Node create_node(const std::string &name);
 
 }
 
-#endif /* RCLCPP_RCLCPP__HPP */
+#endif /* RCLCPP_RCLCPP_RCLCPP_HPP_ */
