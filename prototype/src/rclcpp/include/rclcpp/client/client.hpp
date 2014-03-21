@@ -1,6 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <rclcpp/rclcpp.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <genidlcpp/resolver.h>
@@ -17,14 +18,20 @@ namespace rclcpp
         public:
             typedef boost::shared_ptr<const ROSRequestType> req_shared_ptr;
             typedef boost::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef void (*CallbackType)(const ROSRequestType &req, const ROSResponseType &res);
-            typedef void (*SharedPtrCallbackType)(const ROSRequestType req, const ROSResponseType res);
 
-            Client() {}
+            Client(rclcpp::Node *node) : node_(node) {}
             ~Client() {}
 
+            void handle_response(const ROSResponseType& res) {
+            }
+
+            ROSResponseType call(const ROSRequestType& req) {
+                ROSResponseType res;
+                return res;
+            }
+
         private:
-            CallbackType cb_;
+            rclcpp::Node *node_;
         };
     }
 }

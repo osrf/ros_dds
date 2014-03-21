@@ -4,6 +4,10 @@
 #include <iostream>
 #include <memory>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
 #include <ccpp_dds_dcps.h>
 #include <dds_dcps.h>
 

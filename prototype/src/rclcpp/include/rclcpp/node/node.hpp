@@ -1,9 +1,16 @@
 #ifndef RCLCPP_RCLCPP_NODE_NODE_HPP_
 #define RCLCPP_RCLCPP_NODE_NODE_HPP_
 
+<<<<<<< HEAD
 #include <list>
 #include <map>
 #include <memory>
+=======
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+>>>>>>> Skeleton compiles. Callback dispatching works
 
 #include <ccpp_dds_dcps.h>
 
@@ -188,11 +195,11 @@ public:
     template <typename ROSRequestType, typename ROSResponseType>
     Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
     {
-        Service<ROSRequestType, ROSResponseType> *service = new Service<ROSRequestType, ROSResponseType>();
+        Service<ROSRequestType, ROSResponseType> service(service_name, this, cb);
         // XXX hardcoded queue_size
-        // TODO node should wait for the subscription
-        //Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, service->handle_request);
-        Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
+        typename Subscription<ROSRequestType>::CallbackType f(boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
+
+        Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, f);
 
         return service;
     }
@@ -200,10 +207,11 @@ public:
     template <typename ROSRequestType, typename ROSResponseType>
     Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name)
     {
-        Client<ROSRequestType, ROSResponseType> client;
+        Client<ROSRequestType, ROSResponseType> client(this);
         // XXX hardcoded queue_size
-        // TODO node should wait for the subscription
-        Subscription<ROSResponseType> response_subscription = this->create_subscription<ROSResponseType>(service_name + ".response", 10, client.handle_response);
+        typename Subscription<ROSResponseType>::CallbackType f(boost::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
+
+        Subscription<ROSResponseType> response_subscription = this->create_subscription<ROSResponseType>(service_name + ".response", 10, f);
 
         return client;
     }
