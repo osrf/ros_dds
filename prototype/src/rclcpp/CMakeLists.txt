@@ -8,6 +8,8 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 include_directories(include ${OPENSPLICE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
+set(CMAKE_CXX_FLAGS "-std=c++0x")
+
 catkin_package(
     INCLUDE_DIRS include ${OPENSPLICE_INCLUDE_DIRS}
     LIBRARIES rclcpp ${OPENSPLICE_LIBRARIES}
