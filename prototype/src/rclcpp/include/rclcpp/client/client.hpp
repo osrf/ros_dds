@@ -22,7 +22,6 @@ namespace rclcpp
 
             Client() {}
             ~Client() {}
-           }
 
         private:
             CallbackType cb_;

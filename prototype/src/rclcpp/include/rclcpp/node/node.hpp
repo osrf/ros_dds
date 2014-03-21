@@ -11,7 +11,15 @@
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
 
+#include <rclcpp/client/client.hpp>
+#include <rclcpp/service/service.hpp>
+
 #include <genidlcpp/resolver.h>
+
+template <typename ROSResponseType>
+void handle_request(const ROSResponseType& request)
+{
+}
 
 namespace rclcpp
 {
@@ -20,6 +28,9 @@ using publisher::Publisher;
 using publisher::PublisherInterface;
 using subscription::Subscription;
 using subscription::SubscriptionInterface;
+
+using client::Client;
+using service::Service;
 
 namespace node
 {
@@ -115,10 +126,27 @@ public:
     };
 
     template <typename ROSRequestType, typename ROSResponseType>
-    Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service::CallbackType<ROSRequestType, ROSResponseType> cb);
+    Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
+    {
+        Service<ROSRequestType, ROSResponseType> *service = new Service<ROSRequestType, ROSResponseType>();
+        // XXX hardcoded queue_size
+        // TODO node should wait for the subscription
+        //Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, service->handle_request);
+        Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
+
+        return service;
+    }
 
     template <typename ROSRequestType, typename ROSResponseType>
-    Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name);
+    Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name)
+    {
+        Client<ROSRequestType, ROSResponseType> client;
+        // XXX hardcoded queue_size
+        // TODO node should wait for the subscription
+        Subscription<ROSResponseType> response_subscription = this->create_subscription<ROSResponseType>(service_name + ".response", 10, client.handle_response);
+
+        return client;
+    }
 
     template <typename ROSMsgType>
     void destroy_subscription(Subscription<ROSMsgType> subscription);
