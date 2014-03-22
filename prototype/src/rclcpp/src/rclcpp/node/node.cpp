@@ -9,16 +9,10 @@
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
-bool running;
-
-static void catch_function(int signo) {
-    running = false;
-    std::cout << "Catching Ctrl-C, shutting down..." << std::endl;
-}
-
 Node::Node(std::string name)
 {
-    running = true;
+    this->nodes_.push_back(this);
+    this->subscription_iterator_ = this->subscriptions_.end();
     this->name_ = name;
     this->dpf_ = DDS::DomainParticipantFactory::get_instance();
     checkHandle(this->dpf_.in(), "DDS::DomainParticipantFactory::get_instance");
@@ -45,31 +39,74 @@ Node::Node(std::string name)
     checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
     this->default_subscriber_qos_.partition.name.length(1);
     this->default_subscriber_qos_.partition.name[0] = "ros_partition";
-
-    /* Register a signal handler so DDS doesn't just sit there... */
-    if (signal(SIGINT, catch_function) == SIG_ERR)
-    {
-        fputs("An error occurred while setting a signal handler.\n", stderr);
-    }
 }
 
 void Node::spin()
 {
-    while(running)
+    while(this->running_)
     {
         this->spin_once();
     }
 }
 
-void Node::spin_once()
+bool Node::spin_once()
 {
-    for (auto iterator = this->subscriptions_.cbegin(); iterator != this->subscriptions_.cend(); ++iterator)
+    if (this->subscription_iterator_ == this->subscriptions_.end())
     {
-        (*iterator)->spin_once();
+        this->subscription_iterator_ = this->subscriptions_.begin();
+    }
+    bool did_spin;
+    if (this->subscription_iterator_ != this->subscriptions_.end())
+    {
+        did_spin = (*this->subscription_iterator_)->spin_once();
+        auto current_it = this->subscription_iterator_;
+        // Increament for the next loop to start on someone else
+        ++this->subscription_iterator_;
+        // If it did spin, return true
+        if (did_spin)
+        {
+            return true;
+        }
+        // If it did not spin
+        // Loop from the start to the end looking for one to spin
+        for (auto it = current_it; it != this->subscriptions_.end(); ++it)
+        {
+            did_spin = (*it)->spin_once();
+            if (did_spin)
+            {
+                return true;
+            }
+        }
+        // If it still did not spin, loop from beginning to start
+        for (auto it = this->subscriptions_.begin(); it != current_it; ++it)
+        {
+            did_spin = (*it)->spin_once();
+            if (did_spin)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Node::static_signal_handler(int signo)
+{
+    std::cout << "Catching SIGINT (ctrl-c), shutting down nodes..." << std::endl;
+    for (auto it = Node::nodes_.begin(); it != Node::nodes_.end(); ++it)
+    {
+        (*it)->shutdown("Caught SIGINT (ctrl-c)");
     }
 }
 
-Node::~Node() {
+void Node::shutdown(const std::string &reason)
+{
+    this->running_ = false;
+    this->shutdown_reason_ = reason;
+}
+
+Node::~Node()
+{
     this->dpf_->delete_participant(this->participant_);
 }
 

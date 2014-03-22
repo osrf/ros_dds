@@ -2,6 +2,7 @@
 #ifndef RCLCPP_RCLCPP_RCLCPP_HPP_
 #define RCLCPP_RCLCPP_RCLCPP_HPP_
 
+#include <exception>
 #include <string>
 
 #include <rclcpp/node/node.hpp>
@@ -25,6 +26,14 @@ void init(int argc, char** argv);
  * Create a new Node with a given unique name.
  */
 node::Node::Ptr create_node(const std::string &name);
+
+class AlreadyInitializedError : public std::exception
+{
+    virtual const char* what() const throw()
+    {
+        return "rclcpp::init called more than once";
+    }
+};
 
 }
 

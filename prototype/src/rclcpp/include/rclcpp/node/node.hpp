@@ -15,8 +15,9 @@
 namespace rclcpp
 {
 
-// Forward declaration for friend of the Node constructor
+// Forward declarations for friends of the Node constructor
 std::shared_ptr<rclcpp::node::Node> create_node(const std::string &);
+void init(int argc, char** argv);
 
 namespace node
 {
@@ -39,6 +40,25 @@ private:
 public:
     typedef std::shared_ptr<Node> Ptr;
     ~Node();
+
+    void shutdown(const std::string &reason="No reason given");
+
+    bool running()
+    {
+        return this->running_;
+    }
+
+    std::string get_shutdown_reason()
+    {
+        if (this->running_)
+        {
+            return "";
+        }
+        else
+        {
+            return this->shutdown_reason_;
+        }
+    }
 
     /* Creates and returns a Publisher based on a ROS Msg Type and a topic name
      *
@@ -115,7 +135,7 @@ public:
      *     void callback(const ROSMsgType &msg);
      */
     template <typename ROSMsgType>
-    subscription::Subscription<ROSMsgType> create_subscription(
+    typename subscription::Subscription<ROSMsgType>::Ptr create_subscription(
         std::string topic_name,
         size_t queue_size,
         typename subscription::Subscription<ROSMsgType>::CallbackType callback
@@ -141,24 +161,27 @@ public:
 
         typename r::DDSMsgDataReaderType_var data_reader = r::DDSMsgDataReaderType::_narrow(topic_reader.in());
 
-        subscription::Subscription<ROSMsgType> subscription(data_reader, callback);
-        subscription::SubscriptionInterface *subscription_if = &subscription;
-        this->subscriptions_.push_back(subscription_if);
-        return subscription;
+        typedef subscription::Subscription<ROSMsgType> Sub;
+        typedef subscription::SubscriptionInterface SubIface;
+        typename SubIface::Ptr sub(new Sub(topic_name, data_reader, callback));
+        this->subscriptions_.push_back(sub);
+        // Reset the iterator on the subscriptions
+        this->subscription_iterator_ = this->subscriptions_.begin();
+        return std::dynamic_pointer_cast<Sub>(sub);
     };
 
     /* Destroys a subscription by reference */
     template <typename ROSMsgType>
-    void destroy_subscription(const subscription::Subscription<ROSMsgType> &subscription)
+    void destroy_subscription(const typename subscription::Subscription<ROSMsgType>::Ptr subscription)
     {
-        this->subscriptions_.remove(&subscription);
+        this->subscriptions_.remove(subscription);
     }
 
     /* Processes subscription callbacks, blocking until shutdown (ctrl-c) */
     void spin();
 
     /* Process one subscription callback, if needed, and then returns */
-    void spin_once();
+    bool spin_once();
 private:
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
@@ -168,9 +191,16 @@ private:
     DDS::SubscriberQos default_subscriber_qos_;
 
     std::map<std::string, publisher::PublisherInterface::Ptr > publishers_;
-    std::list<subscription::SubscriptionInterface *> subscriptions_;
+    std::list<subscription::SubscriptionInterface::Ptr> subscriptions_;
+    std::list<subscription::SubscriptionInterface::Ptr>::const_iterator subscription_iterator_;
 
-    void subscription_watcher();
+    static std::list<Node *> nodes_;
+
+    friend void rclcpp::init(int argc, char** argv);
+    static void static_signal_handler(int signo);
+
+    bool running_;
+    std::string shutdown_reason_;
 };
 
 }
