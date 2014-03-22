@@ -4,6 +4,8 @@
 #include <signal.h>
 //#include <boost/thread.hpp>
 
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
@@ -16,6 +18,7 @@ static void catch_function(int signo) {
 
 Node::Node(std::string name)
 {
+    this->subscription_watcher_sem_ = boost::shared_ptr< boost::interprocess::interprocess_semaphore >(new boost::interprocess::interprocess_semaphore(0));
     running = true;
     this->name_ = name;
     this->dpf_ = DDS::DomainParticipantFactory::get_instance();
@@ -55,9 +58,10 @@ Node::Node(std::string name)
 
 void Node::subscription_watcher()
 {
+    this->subscription_watcher_sem_->wait();
     while(running)
     {
-        std::list<rclcpp::SubscriptionInterface *>::const_iterator iterator;
+        std::list< boost::shared_ptr<rclcpp::SubscriptionInterface> >::iterator iterator;
         for (iterator = this->subscriptions_.begin(); iterator != this->subscriptions_.end(); ++iterator) {
             (*iterator)->spin();
         }
@@ -67,6 +71,7 @@ void Node::subscription_watcher()
 
 void Node::wait()
 {
+    this->subscription_watcher_sem_->post();
     this->subscription_watcher_th->join();
 }
 

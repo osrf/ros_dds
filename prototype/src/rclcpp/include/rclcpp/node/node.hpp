@@ -5,8 +5,11 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
+#include <boost/utility.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include <ccpp_dds_dcps.h>
 
@@ -44,7 +47,7 @@ public:
     ~Node();
 
     template <typename ROSMsgType>
-    Publisher<ROSMsgType> create_publisher(std::string topic_name, size_t queue_size)
+    typename Publisher<ROSMsgType>::shared_publisher create_publisher(std::string topic_name, size_t queue_size)
     {
         typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_t;
         typedef typename dds_impl::DDSTypeResolver<ROSMsgType>::DDSMsgType DDSMsg_var;
@@ -85,14 +88,15 @@ public:
 
         // this->publishers_.inse/rt(std::pair<std::string, boost::shared_ptr<PublisherInterface> >(topic_name, publisher));
         // return *(dynamic_cast<const Publisher<ROSMsgType> *>(this->publishers_.at(topic_name).get()));
-        return Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter);
+        typename Publisher<ROSMsgType>::shared_publisher publisher(new Publisher<ROSMsgType>(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter));
+        return publisher;
     }
 
     void destroy_publisher(PublisherInterface * publisher);
     void destroy_publisher(std::string topic_name);
 
     template <typename ROSMsgType>
-    Subscription<ROSMsgType> create_subscription(std::string topic_name,
+    boost::shared_ptr< Subscription<ROSMsgType> > create_subscription(std::string topic_name,
                                                  size_t queue_size,
                                                  typename Subscription<ROSMsgType>::CallbackType cb)
     {
@@ -121,8 +125,8 @@ public:
 
         DDSMsgDataReader_var data_reader = DDSMsgDataReader::_narrow(topic_reader.in());
 
-        Subscription<ROSMsgType> subscription(data_reader, cb);
-        SubscriptionInterface *subscription_if = &subscription;
+        boost::shared_ptr< Subscription<ROSMsgType> > subscription(new Subscription<ROSMsgType>(data_reader, cb));
+        boost::shared_ptr< SubscriptionInterface > subscription_if = boost::dynamic_pointer_cast< Subscription<ROSMsgType> >(subscription);
         this->subscriptions_.push_back(subscription_if);
         return subscription;
     };
@@ -134,7 +138,7 @@ public:
         // XXX hardcoded queue_size
         typename Subscription<ROSRequestType>::CallbackType f(boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
 
-        Subscription<ROSRequestType> request_subscription = this->create_subscription<ROSRequestType>(service_name + ".request", 10, f);
+        boost::shared_ptr< Subscription<ROSRequestType> > request_subscription(this->create_subscription<ROSRequestType>(service_name + ".request", 10, f));
 
         return service;
     }
@@ -142,14 +146,13 @@ public:
     template <typename ROSRequestType, typename ROSResponseType>
     Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name)
     {
-        Publisher<ROSRequestType> publisher = this->create_publisher<ROSRequestType>(service_name + ".request", 0);
+        typename Publisher<ROSRequestType>::shared_publisher publisher(this->create_publisher<ROSRequestType>(service_name + ".request", 0));
         boost::uuids::uuid client_id = boost::uuids::random_generator()();
-        Client<ROSRequestType, ROSResponseType> client(client_id, &publisher);
+        Client<ROSRequestType, ROSResponseType> client(client_id, publisher);
         // XXX hardcoded queue_size
-        boost::shared_ptr< boost::promise<const ROSResponseType &> > call_promise;
         typename Subscription<ROSResponseType>::CallbackType f(boost::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
 
-        Subscription<ROSResponseType> response_subscription = this->create_subscription<ROSResponseType>(service_name + ".response", 10, f);
+        boost::shared_ptr< Subscription<ROSResponseType> > response_subscription(this->create_subscription<ROSResponseType>(service_name + "response", 10, f));
 
         return client;
     }
@@ -159,6 +162,7 @@ public:
 
     void wait();
 private:
+    boost::shared_ptr< boost::interprocess::interprocess_semaphore > subscription_watcher_sem_;
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
     DDS::DomainParticipant_var participant_;
@@ -167,7 +171,7 @@ private:
     DDS::SubscriberQos default_subscriber_qos_;
 
     std::map<std::string, PublisherInterface* > publishers_;
-    std::list<SubscriptionInterface *> subscriptions_;
+    std::list< boost::shared_ptr<SubscriptionInterface> > subscriptions_;
     boost::thread *subscription_watcher_th;
 
     void subscription_watcher();

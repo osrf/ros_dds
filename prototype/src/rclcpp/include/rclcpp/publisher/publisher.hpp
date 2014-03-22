@@ -66,6 +66,7 @@ private:
         // TODO: Check result of _narrow
     }
 public:
+    typedef boost::shared_ptr< Publisher<ROSMsgType> > shared_publisher;
     ~Publisher() {}
 
     void publish(const ROSMsgType &msg)
