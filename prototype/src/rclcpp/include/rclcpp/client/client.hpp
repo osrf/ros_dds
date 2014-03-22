@@ -30,7 +30,7 @@ namespace rclcpp
             typedef boost::shared_ptr<const ROSResponseType> res_shared_ptr;
             typedef boost::shared_ptr< boost::promise<const ROSResponseType&> > shared_promise;
 
-            Client(boost::uuids::uuid client_id, Publisher<ROSRequestType> *publisher) : client_id_(client_id), publisher_(publisher) {}
+            Client(boost::uuids::uuid client_id, typename Publisher<ROSRequestType>::shared_publisher publisher) : client_id_(client_id), publisher_(publisher), seq_id_(0) {}
             ~Client() {}
 
             void handle_response(const ROSResponseType& res) {
@@ -39,21 +39,23 @@ namespace rclcpp
                 call_promise->set_value(res);
             }
 
-            ROSResponseType call(ROSRequestType& req) {
+            ROSResponseType call(ROSRequestType &req) {
                 boost::uuids::uuid req_id = boost::uuids::random_generator()();
                 const std::string str_req_id = boost::lexical_cast<std::string>(req_id);
-                req.req_id = str_req_id;
+                this->seq_id_++;
+                req.req_id = this->seq_id_;
 
-                shared_promise call_promise;
-                pending_calls_[str_req_id] = call_promise;
-                this->publisher_->publish(req);
+                shared_promise call_promise(new boost::promise<const ROSResponseType&>);
+                pending_calls_[req.req_id] = call_promise;
+
                 return call_promise->get_future().get();
             }
 
         private:
-            Publisher<ROSRequestType> *publisher_;
-            std::map<std::string, shared_promise> pending_calls_;
+            typename Publisher<ROSRequestType>::shared_publisher publisher_;
+            std::map<int, shared_promise> pending_calls_;
             boost::uuids::uuid client_id_;
+            int seq_id_;
         };
     }
 }
