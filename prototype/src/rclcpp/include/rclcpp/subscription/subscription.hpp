@@ -61,20 +61,13 @@ public:
 
         for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
         {
-            typename ROSMsgType::Ptr ros_msg;
+            typename ROSMsgType::Ptr ros_msg(new ROSMsgType());
             dds_impl::DDSTypeResolver<ROSMsgType>::convert_dds_message_to_ros(dds_msg_seq[i], (*ros_msg.get()));
             try {
                 this->cb_(ros_msg);
-            } catch (...) {
-                auto eptr = std::current_exception();
-                try {
-                    if (eptr != std::exception_ptr()) {
-                        std::rethrow_exception(eptr);
-                    }
-                } catch(const std::exception& e) {
-                    std::cerr << "Error handling callback for subscription to topic '" << this->topic_name_ << "':"
-                              << std::endl << e.what() << std::endl;
-                }
+            } catch (const std::exception& e) {
+                std::cerr << "Error handling callback for subscription to topic '" << this->topic_name_ << "':"
+                          << std::endl << e.what() << std::endl;
             }
         }
         this->data_reader_->return_loan(dds_msg_seq, sample_info_seq);

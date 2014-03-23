@@ -10,6 +10,7 @@ using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
 Node::Node(std::string name)
+: running_(true)
 {
     this->nodes_.push_back(this);
     this->subscription_iterator_ = this->subscriptions_.end();
