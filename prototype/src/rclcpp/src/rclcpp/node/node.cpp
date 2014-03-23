@@ -40,13 +40,44 @@ Node::Node(std::string name)
     checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
     this->default_subscriber_qos_.partition.name.length(1);
     this->default_subscriber_qos_.partition.name[0] = "ros_partition";
+
+    // Create a waitset for spin
+    this->waitset_ = new DDS::WaitSet();
+}
+
+Node::~Node()
+{
+    this->dpf_->delete_participant(this->participant_);
+    delete this->waitset_;
 }
 
 void Node::spin()
 {
     while(this->running_)
     {
-        this->spin_once();
+        DDS::ConditionSeq active_condition_seq;
+        DDS::Duration_t timeout = {1, 0};
+        DDS::ReturnCode_t retcode = this->waitset_->wait(active_condition_seq, timeout);
+
+        if (active_condition_seq.length() == 0)
+        {
+            continue;
+        }
+
+        // For each subscription
+        for (auto it = this->subscriptions_.begin(); it != this->subscriptions_.end(); ++it)
+        {
+            // Check each active condition
+            for (int i = 0; i < active_condition_seq.length(); ++i)
+            {
+                // To see if the subscriptions status condition matches
+                if ((*it)->get_status_condition() == active_condition_seq[i])
+                {
+                    // If so, spin as many as it can right now
+                    (*it)->spin_some();
+                }
+            }
+        }
     }
 }
 
@@ -104,11 +135,6 @@ void Node::shutdown(const std::string &reason)
 {
     this->running_ = false;
     this->shutdown_reason_ = reason;
-}
-
-Node::~Node()
-{
-    this->dpf_->delete_participant(this->participant_);
 }
 
 void Node::destroy_publisher(const rclcpp::publisher::PublisherInterface::Ptr &publisher_interface)

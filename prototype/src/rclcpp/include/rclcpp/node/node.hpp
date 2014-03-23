@@ -43,7 +43,7 @@ public:
 
     void shutdown(const std::string &reason="No reason given");
 
-    bool running()
+    bool is_running()
     {
         return this->running_;
     }
@@ -167,6 +167,8 @@ public:
         this->subscriptions_.push_back(sub);
         // Reset the iterator on the subscriptions
         this->subscription_iterator_ = this->subscriptions_.begin();
+        // Hook up the read condition to the node's waitset
+        this->waitset_->attach_condition(sub->get_status_condition());
         return std::dynamic_pointer_cast<Sub>(sub);
     };
 
@@ -174,6 +176,7 @@ public:
     template <typename ROSMsgType>
     void destroy_subscription(const typename subscription::Subscription<ROSMsgType>::Ptr subscription)
     {
+        this->waitset_->detach_condition(subscription->get_status_condition());
         this->subscriptions_.remove(subscription);
     }
 
@@ -201,6 +204,8 @@ private:
 
     bool running_;
     std::string shutdown_reason_;
+
+    DDS::WaitSet * waitset_;
 };
 
 }

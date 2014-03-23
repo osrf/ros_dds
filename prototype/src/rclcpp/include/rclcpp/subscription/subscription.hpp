@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <ccpp_dds_dcps.h>
+#include <dds_dcps.h>
 
 #include <genidlcpp/resolver.h>
 
@@ -22,6 +23,8 @@ class SubscriptionInterface
 public:
     typedef std::shared_ptr<SubscriptionInterface> Ptr;
     virtual bool spin_once() = 0;
+    virtual bool spin_some() = 0;
+    virtual DDS::StatusCondition * get_status_condition() = 0;
 };
 
 template <typename ROSMsgType>
@@ -35,19 +38,19 @@ private:
     friend class node::Node;
     Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb)
     : topic_name_(topic_name), data_reader_(data_reader), cb_(cb)
-    {}
-public:
-    ~Subscription() {}
+    {
+        this->condition_ = this->data_reader_->get_statuscondition();
+        this->condition_->set_enabled_statuses(DDS::DATA_AVAILABLE_STATUS);
+    }
 
-
-    bool spin_once()
+    bool spin_(DDS::ULong read_length)
     {
         typename r::DDSMsgSeqType_var dds_msg_seq = new typename r::DDSMsgSeqType();
         DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
         this->data_reader_->take(
             dds_msg_seq,
             sample_info_seq,
-            1,  // Set read length to 1, so that spin_once, spins (at most) once
+            read_length,
             DDS::ANY_SAMPLE_STATE,
             DDS::ANY_VIEW_STATE,
             DDS::ALIVE_INSTANCE_STATE
@@ -73,11 +76,29 @@ public:
         this->data_reader_->return_loan(dds_msg_seq, sample_info_seq);
         return result;
    }
+public:
+    ~Subscription() {}
+
+    DDS::StatusCondition * get_status_condition()
+    {
+        return this->condition_;
+    }
+
+    bool spin_once()
+    {
+        return this->spin_(1);
+    }
+
+    bool spin_some()
+    {
+        return this->spin_(DDS::LENGTH_UNLIMITED);
+    }
 
 private:
     typename r::DDSMsgDataReaderType_var data_reader_;
     CallbackType cb_;
     std::string topic_name_;
+    DDS::StatusCondition * condition_;
 };
 
 }

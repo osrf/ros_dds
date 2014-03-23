@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <std_msgs/String.h>
@@ -12,11 +14,12 @@ int main(int argc, char** argv)
     auto publisher = node->create_publisher<std_msgs::String>("chatter", 0);
 
     std_msgs::String msg;
-    int i = 0;
-    while(i < 10)
+    int count = 0;
+    while(node->is_running())
     {
-        i++;
-        msg.data = "Hello World!";
+        std::stringstream ss;
+        ss << "[" << count++ << "]: Hello World!";
+        msg.data = ss.str();
         publisher->publish(msg);
         sleep(1);
     }
