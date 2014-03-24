@@ -10,8 +10,9 @@
 
 #include <iostream>
 
-bool add(std_msgs::AddTwoIntsRequest &req, std_msgs::AddTwoIntsResponse &res)
+bool add(const std_msgs::AddTwoIntsRequest &req, std_msgs::AddTwoIntsResponse& res)
 {
+    std::cout << "Incoming request from client_id(" << req.client_id << ") req.a(" << req.a << "), req.b(" << req.b << "), req.req_id(" << req.req_id << ")" << std::endl;
     res.sum = req.a + req.b;
     return true;
 }
@@ -21,7 +22,7 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse> service = node.create_service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints", add);
+    rclcpp::Service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_service service = node.create_service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints", add);
     node.wait();
     return 0;
 }

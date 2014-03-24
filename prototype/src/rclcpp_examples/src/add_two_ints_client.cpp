@@ -18,12 +18,17 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse> client = node.create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
+    rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_client client = node.create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
     std_msgs::AddTwoIntsRequest req;
     req.a = 2;
     req.b = 3;
 
-    client.call(req);
+    typename rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_future f;
+
+    f = client->async_call(req);
+    std_msgs::AddTwoIntsResponse response = f.get();
+    std::cout << "Sum: " << response.sum << std::endl;
+
     node.wait();
     return 0;
 }

@@ -11,6 +11,8 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/thread/future.hpp>
+
 
 #include <genidlcpp/resolver.h>
 
@@ -29,33 +31,41 @@ namespace rclcpp
             typedef boost::shared_ptr<const ROSRequestType> req_shared_ptr;
             typedef boost::shared_ptr<const ROSResponseType> res_shared_ptr;
             typedef boost::shared_ptr< boost::promise<const ROSResponseType&> > shared_promise;
+            typedef boost::shared_ptr< Client<ROSRequestType, ROSResponseType> > shared_client;
+            typedef boost::shared_future<const ROSResponseType&> shared_future;
 
-            Client(boost::uuids::uuid client_id, typename Publisher<ROSRequestType>::shared_publisher publisher) : client_id_(client_id), publisher_(publisher), seq_id_(0) {}
+
+            Client(const std::string& client_id, typename Publisher<ROSRequestType>::shared_publisher publisher) : client_id_(client_id), publisher_(publisher), req_id_(0) {}
             ~Client() {}
 
             void handle_response(const ROSResponseType& res) {
+                std::cout << "Got response" << std::endl;
                 shared_promise call_promise = this->pending_calls_[res.req_id];
                 this->pending_calls_.erase(res.req_id);
                 call_promise->set_value(res);
             }
 
             ROSResponseType call(ROSRequestType &req) {
-                boost::uuids::uuid req_id = boost::uuids::random_generator()();
-                const std::string str_req_id = boost::lexical_cast<std::string>(req_id);
-                this->seq_id_++;
-                req.req_id = this->seq_id_;
+                return this->async_call(req).get();
+            }
+
+            shared_future async_call(ROSRequestType &req) {
+                req.req_id = ++(this->req_id_);
+                req.client_id = client_id_;
 
                 shared_promise call_promise(new boost::promise<const ROSResponseType&>);
                 pending_calls_[req.req_id] = call_promise;
 
-                return call_promise->get_future().get();
+                this->publisher_->publish(req);
+
+                return shared_future(call_promise->get_future());
             }
 
         private:
             typename Publisher<ROSRequestType>::shared_publisher publisher_;
             std::map<int, shared_promise> pending_calls_;
-            boost::uuids::uuid client_id_;
-            int seq_id_;
+            std::string client_id_;
+            int req_id_;
         };
     }
 }
