@@ -46,3 +46,13 @@ Constraints
 * Constants can not be defined under the message class in DDS, therefore they are defined in the surounding scope with a prefix.
 
 * Duration and Time types are currently simply mapped to `long long`.
+
+Miscellaneous
+-------------
+
+* On OSX, if you get an error like this:
+
+        /usr/local/share/opensplice/cmake/../../../include/opensplice/sys/os_abstract.h:80:23: error: invalid suffix on literal; C++11 requires a space between literal and identifier [-Wreserved-user-defined-literal]
+        #define PA_ADDRFMT      "%"PA_PRIxADDR
+
+    then you should go edit that file and add spaces in the two places where they're missing.  This problem seems to be fixed in the forthcoming v6.4 of OpenSplice.
