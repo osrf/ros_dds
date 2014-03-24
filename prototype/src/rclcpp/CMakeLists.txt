@@ -6,12 +6,19 @@ find_package(catkin REQUIRED COMPONENTS genidlcpp)
 
 include_directories(include ${OPENSPLICE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS "-std=c++0x")
+# For older versions of clang, libstdc++ is used by default and we need to
+# explicitly request libc++ instead.
+if(APPLE)
+  set(CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++")
+else()
+  set(CMAKE_CXX_FLAGS "-std=c++0x")
+endif ()
 
 catkin_package(
     INCLUDE_DIRS include ${OPENSPLICE_INCLUDE_DIRS}
     LIBRARIES rclcpp ${OPENSPLICE_LIBRARIES}
     CATKIN_DEPENDS genidlcpp
+    CFG_EXTRAS rclcpp-extras.cmake
 )
 
 add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
