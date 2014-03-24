@@ -56,7 +56,3 @@ Miscellaneous
         #define PA_ADDRFMT      "%"PA_PRIxADDR
 
     then you should go edit that file and add spaces in the two places where they're missing.  This problem seems to be fixed in the forthcoming v6.4 of OpenSplice.
-
-* `common_msgs` isn't building right now (2014-03-24), at least not on OS X.  Ignore it like so:
-
-        touch src/ros-packages/common_msgs/CATKIN_IGNORE
