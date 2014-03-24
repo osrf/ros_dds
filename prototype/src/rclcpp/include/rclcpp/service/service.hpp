@@ -22,22 +22,29 @@ namespace rclcpp
         public:
             typedef boost::shared_ptr<const ROSRequestType> req_shared_ptr;
             typedef boost::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef boost::function<bool (ROSRequestType, ROSResponseType)> CallbackType;
+            typedef boost::function<bool (const ROSRequestType&, ROSResponseType&)> CallbackType;
+            typedef boost::shared_ptr< Service<ROSRequestType, ROSResponseType> > shared_service;
 
-            Service(const std::string& service_name, rclcpp::Node *node, CallbackType cb) : service_name_(service_name), node_(node), cb_(cb) {}
+
+            Service(const std::string& service_name, rclcpp::Node *node, CallbackType cb, typename Publisher<ROSResponseType>::shared_publisher publisher) : service_name_(service_name), node_(node), cb_(cb), publisher_(publisher) {}
 
             ~Service() {}
 
-           void handle_request(const ROSRequestType& request)
+           void handle_request(const ROSRequestType& req)
            {
-               ROSResponseType response;
-               this->cb_(request, response);
+               ROSResponseType res;
+               this->cb_(req, res);
+               res.req_id = req.req_id;
+               res.client_id = req.client_id;
+               publisher_->publish(res);
            }
 
         private:
             std::string service_name_;
             CallbackType cb_;
             rclcpp::Node *node_;
+
+            typename Publisher<ROSResponseType>::shared_publisher publisher_;
         };
     }
 }

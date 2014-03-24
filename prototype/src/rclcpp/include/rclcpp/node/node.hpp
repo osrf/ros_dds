@@ -10,6 +10,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <ccpp_dds_dcps.h>
 
@@ -192,27 +193,35 @@ public:
     };
 
     template <typename ROSRequestType, typename ROSResponseType>
-    Service<ROSRequestType, ROSResponseType> create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
+    typename Service<ROSRequestType, ROSResponseType>::shared_service create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
     {
-        Service<ROSRequestType, ROSResponseType> service(service_name, this, cb);
+        // TODO make a client-specific response queue
+        typename Publisher<ROSResponseType>::shared_publisher publisher(this->create_publisher<ROSResponseType>(service_name + "_response", 0));
+
+        typename Service<ROSRequestType, ROSResponseType>::shared_service service(new Service<ROSRequestType, ROSResponseType>(service_name, this, cb, publisher));
         // XXX hardcoded queue_size
         typename Subscription<ROSRequestType>::CallbackType f(boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
 
-        boost::shared_ptr< Subscription<ROSRequestType> > request_subscription(this->create_subscription<ROSRequestType>(service_name + ".request", 10, f));
+        boost::shared_ptr< Subscription<ROSRequestType> > request_subscription(this->create_subscription<ROSRequestType>(service_name + "_request", 10, f));
 
         return service;
     }
 
     template <typename ROSRequestType, typename ROSResponseType>
-    Client<ROSRequestType, ROSResponseType> create_client(const std::string &service_name)
+    typename Client<ROSRequestType, ROSResponseType>::shared_client create_client(const std::string &service_name)
     {
-        typename Publisher<ROSRequestType>::shared_publisher publisher(this->create_publisher<ROSRequestType>(service_name + ".request", 0));
-        boost::uuids::uuid client_id = boost::uuids::random_generator()();
-        Client<ROSRequestType, ROSResponseType> client(client_id, publisher);
+        typename Publisher<ROSRequestType>::shared_publisher publisher(this->create_publisher<ROSRequestType>(service_name + "_request", 0));
+        boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
+        const std::string client_id = boost::lexical_cast<std::string>(client_id_uuid);
+        typename Client<ROSRequestType, ROSResponseType>::shared_client client(new Client<ROSRequestType, ROSResponseType>(client_id, publisher));
+
+
+
         // XXX hardcoded queue_size
         typename Subscription<ROSResponseType>::CallbackType f(boost::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
 
-        boost::shared_ptr< Subscription<ROSResponseType> > response_subscription(this->create_subscription<ROSResponseType>(service_name + "response", 10, f));
+        // TODO make a client-specific response queue
+        boost::shared_ptr< Subscription<ROSResponseType> > response_subscription(this->create_subscription<ROSResponseType>(service_name + "_response", 10, f));
 
         return client;
     }
@@ -231,7 +240,6 @@ public:
     /* Process one subscription callback, if needed, and then returns */
     bool spin_once();
 private:
-    boost::shared_ptr< boost::interprocess::interprocess_semaphore > subscription_watcher_sem_;
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;
     DDS::DomainParticipant_var participant_;

@@ -6,8 +6,6 @@
 
 #include <signal.h>
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
-
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
