@@ -23,3 +23,9 @@ catkin_package(
 
 add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
 target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES})
+
+install(TARGETS rclcpp
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(DIRECTORY include/rclcpp/ 
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
