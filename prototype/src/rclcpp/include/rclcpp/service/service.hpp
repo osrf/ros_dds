@@ -23,9 +23,7 @@ namespace rclcpp
         class Service
         {
         public:
-            typedef std::shared_ptr<const ROSRequestType> req_shared_ptr;
-            typedef std::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef std::function<bool (const ROSRequestType&, ROSResponseType&)> CallbackType;
+            typedef std::function<bool (typename ROSRequestType::ConstPtr, typename ROSResponseType::Ptr)> CallbackType;
             typedef std::shared_ptr< Service<ROSRequestType, ROSResponseType> > Ptr;
 
 
@@ -35,7 +33,7 @@ namespace rclcpp
 
             void handle_request(typename ROSRequestType::ConstPtr req)
             {
-//                typename ROSResponseType::Ptr res(new ROSResponseType());
+                typename ROSResponseType::Ptr res(new ROSResponseType());
 //                this->cb_(req, res);
 /*
                 res.req_id = req->req_id;
