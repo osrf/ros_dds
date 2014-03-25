@@ -17,8 +17,8 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    rclcpp::Node node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_client client = node.create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
+    rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
+    rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::Ptr client = node->create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
     std_msgs::AddTwoIntsRequest req;
     req.a = 2;
     req.b = 3;

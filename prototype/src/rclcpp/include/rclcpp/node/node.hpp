@@ -4,12 +4,8 @@
 #include <list>
 #include <map>
 #include <memory>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <functional>
 #include <boost/utility.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <ccpp_dds_dcps.h>
@@ -193,35 +189,34 @@ public:
     };
 
     template <typename ROSRequestType, typename ROSResponseType>
-    typename Service<ROSRequestType, ROSResponseType>::shared_service create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
+    typename Service<ROSRequestType, ROSResponseType>::Ptr create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
     {
         // TODO make a client-specific response queue
-        typename Publisher<ROSResponseType>::shared_publisher publisher(this->create_publisher<ROSResponseType>(service_name + "_response", 0));
+        typename rclcpp::publisher::Publisher<ROSResponseType>::Ptr publisher(this->create_publisher<ROSResponseType>(service_name + "_response", 0));
 
-        typename Service<ROSRequestType, ROSResponseType>::shared_service service(new Service<ROSRequestType, ROSResponseType>(service_name, this, cb, publisher));
+        typename rclcpp::service::Service<ROSRequestType, ROSResponseType>::Ptr service(new rclcpp::service::Service<ROSRequestType, ROSResponseType>(service_name, this, cb, publisher));
         // XXX hardcoded queue_size
-        typename Subscription<ROSRequestType>::CallbackType f(boost::bind(&Service<ROSRequestType, ROSResponseType>::handle_request, service, _1));
+        typename rclcpp::subscription::Subscription<ROSRequestType>::CallbackType f(std::bind(&rclcpp::service::Service<ROSRequestType, ROSResponseType>::handle_request, service, std::placeholders::_1));
 
-        boost::shared_ptr< Subscription<ROSRequestType> > request_subscription(this->create_subscription<ROSRequestType>(service_name + "_request", 10, f));
+        typename rclcpp::subscription::Subscription<ROSRequestType>::Ptr request_subscription(this->create_subscription<ROSRequestType>(service_name + "_request", 10, f));
 
         return service;
     }
 
     template <typename ROSRequestType, typename ROSResponseType>
-    typename Client<ROSRequestType, ROSResponseType>::shared_client create_client(const std::string &service_name)
+    typename Client<ROSRequestType, ROSResponseType>::Ptr create_client(const std::string &service_name)
     {
-        typename Publisher<ROSRequestType>::shared_publisher publisher(this->create_publisher<ROSRequestType>(service_name + "_request", 0));
+        typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher(this->create_publisher<ROSRequestType>(service_name + "_request", 0));
         boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
         const std::string client_id = boost::lexical_cast<std::string>(client_id_uuid);
-        typename Client<ROSRequestType, ROSResponseType>::shared_client client(new Client<ROSRequestType, ROSResponseType>(client_id, publisher));
-
+        typename rclcpp::client::Client<ROSRequestType, ROSResponseType>::Ptr client(new rclcpp::client::Client<ROSRequestType, ROSResponseType>(client_id, publisher));
 
 
         // XXX hardcoded queue_size
-        typename Subscription<ROSResponseType>::CallbackType f(boost::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
+        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(std::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
 
         // TODO make a client-specific response queue
-        boost::shared_ptr< Subscription<ROSResponseType> > response_subscription(this->create_subscription<ROSResponseType>(service_name + "_response", 10, f));
+        typename rclcpp::subscription::Subscription<ROSResponseType>::Ptr response_subscription(this->create_subscription<ROSResponseType>(service_name + "_response", 10, f));
 
         return client;
     }

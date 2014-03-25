@@ -21,8 +21,8 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    rclcpp::Node node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_service service = node.create_service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints", add);
-    node.wait();
+    rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
+    rclcpp::Service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::Ptr service = node->create_service<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints", add);
+    node->spin();
     return 0;
 }
