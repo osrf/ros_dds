@@ -4,12 +4,12 @@
 #include "std_msgs/dds_impl/String_convert.h"
 
 #include <std_msgs/Int32.h>
-#include <std_msgs/AddTwoIntsRequest.h>
-#include <std_msgs/AddTwoIntsResponse.h>
+#include <rclcpp_examples/AddTwoIntsRequest.h>
+#include <rclcpp_examples/AddTwoIntsResponse.h>
 
 #include "std_msgs/dds_impl/Int32_convert.h"
-#include "std_msgs/dds_impl/AddTwoIntsRequest_convert.h"
-#include "std_msgs/dds_impl/AddTwoIntsResponse_convert.h"
+#include "rclcpp_examples/dds_impl/AddTwoIntsRequest_convert.h"
+#include "rclcpp_examples/dds_impl/AddTwoIntsResponse_convert.h"
 
 #include <iostream>
 
@@ -18,8 +18,8 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
-    auto client = node->create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
-    std_msgs::AddTwoIntsRequest req;
+    auto client = node->create_client<rclcpp_examples::AddTwoIntsRequest, rclcpp_examples::AddTwoIntsResponse>("add_two_ints");
+    rclcpp_examples::AddTwoIntsRequest req;
     req.a = 2;
     req.b = 3;
 
