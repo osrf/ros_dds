@@ -30,9 +30,9 @@ namespace rclcpp
         public:
             typedef std::shared_ptr<const ROSRequestType> req_shared_ptr;
             typedef std::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef std::shared_ptr< std::promise<const ROSResponseType&> > shared_promise;
+            typedef std::shared_ptr< std::promise<typename ROSResponseType::ConstPtr> > shared_promise;
             typedef std::shared_ptr< Client<ROSRequestType, ROSResponseType> > Ptr;
-            typedef std::shared_future<const ROSResponseType&> shared_future;
+            typedef std::shared_future<typename ROSResponseType::ConstPtr> shared_future;
 
 
             Client(const std::string& client_id, typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher) : client_id_(client_id), publisher_(publisher), req_id_(0) {}
@@ -40,12 +40,10 @@ namespace rclcpp
 
             void handle_response(typename ROSResponseType::ConstPtr res)
             {
-/*
                 std::cout << "Got response" << std::endl;
                 shared_promise call_promise = this->pending_calls_[res->req_id];
                 this->pending_calls_.erase(res->req_id);
                 call_promise->set_value(res);
-*/
             }
 
             ROSResponseType call(ROSRequestType &req) {
@@ -56,7 +54,7 @@ namespace rclcpp
                 req.req_id = ++(this->req_id_);
                 req.client_id = client_id_;
 
-                shared_promise call_promise(new std::promise<const ROSResponseType&>);
+                shared_promise call_promise(new std::promise<typename ROSResponseType::ConstPtr>);
                 pending_calls_[req.req_id] = call_promise;
 
                 this->publisher_->publish(req);

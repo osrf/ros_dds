@@ -65,6 +65,11 @@ public:
         checkStatus(status, "DDSMsgDataWriter_t::write");
     }
 
+    void publish(typename ROSMsgType::ConstPtr msg)
+    {
+        this->publish(*msg);
+    }
+
     std::string get_topic_name()
     {
         return this->topic_name_;

@@ -26,9 +26,10 @@ int main(int argc, char** argv)
     typename rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_future f;
 
     f = client->async_call(req);
-    std_msgs::AddTwoIntsResponse response = f.get();
-    std::cout << "Sum: " << response.sum << std::endl;
 
-    node->spin();
+    std_msgs::AddTwoIntsResponse::ConstPtr response = f.get();
+    std::cout << "Sum: " << response->sum << std::endl;
+
+    node->spin_once();
     return 0;
 }
