@@ -46,10 +46,6 @@ namespace rclcpp
                 call_promise->set_value(res);
             }
 
-            ROSResponseType call(ROSRequestType &req) {
-                return this->async_call(req).get();
-            }
-
             shared_future async_call(ROSRequestType &req) {
                 req.req_id = ++(this->req_id_);
                 req.client_id = client_id_;

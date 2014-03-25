@@ -13,23 +13,29 @@
 
 #include <iostream>
 
+void process_future(typename rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_future f)
+{
+    std_msgs::AddTwoIntsResponse::ConstPtr response = f.get();
+    std::cout << "Sum: " << response->sum << std::endl;   
+}
+
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
     rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::Ptr client = node->create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
+    auto client = node->create_client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>("add_two_ints");
     std_msgs::AddTwoIntsRequest req;
     req.a = 2;
     req.b = 3;
 
-    typename rclcpp::Client<std_msgs::AddTwoIntsRequest, std_msgs::AddTwoIntsResponse>::shared_future f;
+    auto f = client->async_call(req);
+    // Need to spawn a separate thread because std::future<T>::get blocks
+    // This could be remedied by using coroutines and boost.asio, but
+    // the version of boost shipped with Ubuntu 12.04 is too old
+    std::thread t(process_future, f);
 
-    f = client->async_call(req);
-
-    std_msgs::AddTwoIntsResponse::ConstPtr response = f.get();
-    std::cout << "Sum: " << response->sum << std::endl;
-
-    node->spin_once();
+    node->spin();
+    t.join();
     return 0;
 }
