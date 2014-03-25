@@ -35,9 +35,9 @@ namespace rclcpp
 
             void handle_request(typename ROSRequestType::ConstPtr req)
             {
+//                typename ROSResponseType::Ptr res(new ROSResponseType());
+//                this->cb_(req, res);
 /*
-                ROSResponseType res;
-                this->cb_(req, res);
                 res.req_id = req->req_id;
                 res.client_id = req->client_id;
                 this->publisher_->publish(res);

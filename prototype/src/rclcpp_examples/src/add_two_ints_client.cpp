@@ -29,6 +29,6 @@ int main(int argc, char** argv)
     std_msgs::AddTwoIntsResponse response = f.get();
     std::cout << "Sum: " << response.sum << std::endl;
 
-    node.wait();
+    node->spin();
     return 0;
 }

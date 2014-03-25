@@ -10,10 +10,10 @@
 
 #include <iostream>
 
-bool add(const std_msgs::AddTwoIntsRequest &req, std_msgs::AddTwoIntsResponse& res)
+bool add(std_msgs::AddTwoIntsRequest::ConstPtr req, std_msgs::AddTwoIntsResponse::Ptr res)
 {
-    std::cout << "Incoming request from client_id(" << req.client_id << ") req.a(" << req.a << "), req.b(" << req.b << "), req.req_id(" << req.req_id << ")" << std::endl;
-    res.sum = req.a + req.b;
+    std::cout << "Incoming request from client_id(" << req->client_id << ") req.a(" << req->a << "), req.b(" << req->b << "), req.req_id(" << req->req_id << ")" << std::endl;
+    res->sum = req->a + req->b;
     return true;
 }
 

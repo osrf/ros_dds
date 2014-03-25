@@ -38,11 +38,14 @@ namespace rclcpp
             Client(const std::string& client_id, typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher) : client_id_(client_id), publisher_(publisher), req_id_(0) {}
             ~Client() {}
 
-            void handle_response(const ROSResponseType& res) {
+            void handle_response(typename ROSResponseType::ConstPtr res)
+            {
+/*
                 std::cout << "Got response" << std::endl;
-                shared_promise call_promise = this->pending_calls_[res.req_id];
-                this->pending_calls_.erase(res.req_id);
+                shared_promise call_promise = this->pending_calls_[res->req_id];
+                this->pending_calls_.erase(res->req_id);
                 call_promise->set_value(res);
+*/
             }
 
             ROSResponseType call(ROSRequestType &req) {

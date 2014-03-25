@@ -20,11 +20,6 @@
 
 #include <genidlcpp/resolver.h>
 
-template <typename ROSResponseType>
-void handle_request(const ROSResponseType& request)
-{
-}
-
 namespace rclcpp
 {
 
@@ -213,7 +208,7 @@ public:
 
 
         // XXX hardcoded queue_size
-        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(std::bind(&Client<ROSRequestType, ROSResponseType>::handle_response, client, _1));
+        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(std::bind(&rclcpp::client::Client<ROSRequestType, ROSResponseType>::handle_response, client, std::placeholders::_1));
 
         // TODO make a client-specific response queue
         typename rclcpp::subscription::Subscription<ROSResponseType>::Ptr response_subscription(this->create_subscription<ROSResponseType>(service_name + "_response", 10, f));
