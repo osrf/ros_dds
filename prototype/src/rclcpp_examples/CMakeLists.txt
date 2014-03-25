@@ -5,6 +5,9 @@ find_package(catkin REQUIRED COMPONENTS rclcpp std_msgs)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
+add_message_files(DIRECTORY srv FILES AddTwoIntsRequest.msg AddTwoIntsResponse.msg)
+generate_messages()
+
 catkin_package()
 
 add_executable(talker src/talker.cpp)
