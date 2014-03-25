@@ -53,11 +53,12 @@ namespace rclcpp
                  // XXX The version (4.6) of GCC that ships with Ubuntu 12.04
                  // is broken, wait_for should return a std::future_status,
                  // according to the C++11 spec
-                 bool status;
+                 //bool status;
+                 std::future_status status;
                  do {
                      this->node_->spin_once();
                      status = f.wait_for(std::chrono::milliseconds(100));
-                 } while (!status);
+                 } while (status != std::future_status::ready);
                  return f.get();
             }
 
