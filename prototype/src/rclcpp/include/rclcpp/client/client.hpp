@@ -8,6 +8,7 @@
 #include <rclcpp/publisher/publisher.hpp>
 #include <future>
 #include <memory>
+#include <chrono>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/lexical_cast.hpp>
@@ -35,7 +36,7 @@ namespace rclcpp
             typedef std::shared_future<typename ROSResponseType::ConstPtr> shared_future;
 
 
-            Client(const std::string& client_id, typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher) : client_id_(client_id), publisher_(publisher), req_id_(0) {}
+            Client(const std::string& client_id, typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher, rclcpp::node::Node *node) : client_id_(client_id), publisher_(publisher), node_(node), req_id_(0) {}
             ~Client() {}
 
             void handle_response(typename ROSResponseType::ConstPtr res)
@@ -44,6 +45,17 @@ namespace rclcpp
                 shared_promise call_promise = this->pending_calls_[res->req_id];
                 this->pending_calls_.erase(res->req_id);
                 call_promise->set_value(res);
+            }
+
+            typename ROSResponseType::ConstPtr call(ROSRequestType &req)
+            {
+                 shared_future f = this->async_call(req);
+                 bool status;
+                 do {
+                     this->node_->spin_once();
+                     status = f.wait_for(std::chrono::milliseconds(100));
+                 } while (!status);
+                 return f.get();
             }
 
             shared_future async_call(ROSRequestType &req) {
@@ -63,6 +75,7 @@ namespace rclcpp
             std::map<int, shared_promise> pending_calls_;
             std::string client_id_;
             int req_id_;
+            rclcpp::node::Node *node_;
         };
     }
 }

@@ -8,6 +8,7 @@
 #include <std_msgs/String.h>
 #include "std_msgs/dds_impl/String_convert.h"
 
+#include <rclcpp/node/node.hpp>
 #include <rclcpp/publisher/publisher.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -27,17 +28,22 @@ namespace rclcpp
             typedef std::shared_ptr< Service<ROSRequestType, ROSResponseType> > Ptr;
 
 
-            Service(const std::string& service_name, rclcpp::node::Node *node, CallbackType cb, typename rclcpp::publisher::Publisher<ROSResponseType>::Ptr publisher) : service_name_(service_name), node_(node), cb_(cb), publisher_(publisher) {}
+            Service(const std::string& service_name, rclcpp::node::Node *node, CallbackType cb) : service_name_(service_name), node_(node), cb_(cb) {}
 
             ~Service() {}
 
             void handle_request(typename ROSRequestType::ConstPtr req)
             {
+                size_t queue_size = 0;
+                std::string topic_name = this->service_name_ + "_response_" + req->client_id;
+                std::cout << "Publishing server responses to topic named: " << topic_name << std::endl;
+                auto publisher = this->node_->template get_publisher<ROSResponseType>(
+                    topic_name, queue_size);
                 typename ROSResponseType::Ptr res(new ROSResponseType());
                 this->cb_(req, res);
                 res->req_id = req->req_id;
                 res->client_id = req->client_id;
-                this->publisher_->publish(res);
+                publisher->publish(res);
             }
 
         private:
@@ -45,7 +51,6 @@ namespace rclcpp
             CallbackType cb_;
             rclcpp::node::Node *node_;
 
-            typename rclcpp::publisher::Publisher<ROSResponseType>::Ptr publisher_;
         };
     }
 }

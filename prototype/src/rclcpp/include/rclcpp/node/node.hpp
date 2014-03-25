@@ -7,6 +7,7 @@
 #include <functional>
 #include <boost/utility.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <ccpp_dds_dcps.h>
 
@@ -71,6 +72,22 @@ public:
         }
     }
 
+    template <typename ROSMsgType>
+    typename publisher::Publisher<ROSMsgType>::Ptr get_publisher(const std::string &topic_name, size_t queue_size)
+    {
+        typedef publisher::Publisher<ROSMsgType> Pub;
+        auto publisher = this->publishers_.find(topic_name);
+        if (publisher != this->publishers_.end())
+        {
+            return std::dynamic_pointer_cast<Pub>(publisher->second);
+        }
+        else
+        {
+            return create_publisher<ROSMsgType>(topic_name, queue_size);
+        }
+    }
+
+ 
     /* Creates and returns a Publisher based on a ROS Msg Type and a topic name
      *
      * The Publisher is templated on the ROS Msg Type, and there can only be one
@@ -183,35 +200,67 @@ public:
         return std::dynamic_pointer_cast<Sub>(sub);
     };
 
+    /* Creates and returns a Service based on a ROS Request Type, ROS Response Type,
+     * a service name.
+     *
+     * The service is templated on the ROS Request Type and ROS Response Type.
+     *
+     * Additionally, a callback is required. The callback should take this signature:
+     *
+     *     void callback(ROSRequestType::ConstPtr req, ROSResponseType::Ptr res);
+     */
     template <typename ROSRequestType, typename ROSResponseType>
     typename Service<ROSRequestType, ROSResponseType>::Ptr create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
     {
-        // TODO make a client-specific response queue
-        typename rclcpp::publisher::Publisher<ROSResponseType>::Ptr publisher(this->create_publisher<ROSResponseType>(service_name + "_response", 0));
-
-        typename rclcpp::service::Service<ROSRequestType, ROSResponseType>::Ptr service(new rclcpp::service::Service<ROSRequestType, ROSResponseType>(service_name, this, cb, publisher));
         // XXX hardcoded queue_size
-        typename rclcpp::subscription::Subscription<ROSRequestType>::CallbackType f(std::bind(&rclcpp::service::Service<ROSRequestType, ROSResponseType>::handle_request, service, std::placeholders::_1));
+        size_t queue_size = 0;
 
-        typename rclcpp::subscription::Subscription<ROSRequestType>::Ptr request_subscription(this->create_subscription<ROSRequestType>(service_name + "_request", 10, f));
+        typename rclcpp::service::Service<ROSRequestType, ROSResponseType>::Ptr service(
+            new rclcpp::service::Service<ROSRequestType, ROSResponseType>(
+                service_name, this, cb));
+        typename rclcpp::subscription::Subscription<ROSRequestType>::CallbackType f(
+            std::bind(&rclcpp::service::Service<ROSRequestType, ROSResponseType>::handle_request,
+                      service, std::placeholders::_1));
+
+        // Create a Subscription for the Service's request channel
+        typename rclcpp::subscription::Subscription<ROSRequestType>::Ptr request_subscription(
+            this->create_subscription<ROSRequestType>(service_name + "_request", queue_size, f));
 
         return service;
     }
 
+    /* Creates and returns a Client based on a ROS Request Type, ROS Response Type,
+     * a service name.
+     *
+     * The client is templated on the ROS Request Type and ROS Response Type.
+     */
     template <typename ROSRequestType, typename ROSResponseType>
     typename Client<ROSRequestType, ROSResponseType>::Ptr create_client(const std::string &service_name)
     {
-        typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher(this->create_publisher<ROSRequestType>(service_name + "_request", 0));
-        boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
-        const std::string client_id = boost::lexical_cast<std::string>(client_id_uuid);
-        typename rclcpp::client::Client<ROSRequestType, ROSResponseType>::Ptr client(new rclcpp::client::Client<ROSRequestType, ROSResponseType>(client_id, publisher));
-
-
         // XXX hardcoded queue_size
-        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(std::bind(&rclcpp::client::Client<ROSRequestType, ROSResponseType>::handle_response, client, std::placeholders::_1));
+        size_t queue_size = 0;
 
-        // TODO make a client-specific response queue
-        typename rclcpp::subscription::Subscription<ROSResponseType>::Ptr response_subscription(this->create_subscription<ROSResponseType>(service_name + "_response", 10, f));
+        boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
+        std::string client_id = boost::lexical_cast<std::string>(client_id_uuid);
+        // DDS does not support topic names that contain - or #
+        boost::erase_all(client_id, "-");
+
+        std::string topic_name = service_name + "_response_" + client_id;
+        std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
+
+        typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher(
+            this->create_publisher<ROSRequestType>(service_name + "_request", queue_size));
+
+        typename rclcpp::client::Client<ROSRequestType, ROSResponseType>::Ptr client(
+            new rclcpp::client::Client<ROSRequestType, ROSResponseType>(client_id, publisher, this));
+
+        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(
+            std::bind(&rclcpp::client::Client<ROSRequestType, ROSResponseType>::handle_response,
+                      client, std::placeholders::_1));
+
+        // Create a Subscription for the Client's response channel
+        typename rclcpp::subscription::Subscription<ROSResponseType>::Ptr response_subscription(
+            this->create_subscription<ROSResponseType>(topic_name, queue_size, f));
 
         return client;
     }
