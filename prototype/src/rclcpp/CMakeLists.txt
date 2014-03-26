@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rclcpp)
 
 find_package(opensplice REQUIRED)
-find_package(catkin REQUIRED COMPONENTS genidlcpp)
+find_package(catkin REQUIRED COMPONENTS genidlcpp std_msgs message_generation)
 
 include_directories(include ${OPENSPLICE_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 
@@ -14,6 +14,24 @@ else()
   set(CMAKE_CXX_FLAGS "-std=c++0x")
 endif ()
 
+add_service_files(
+    DIRECTORY srv FILES
+    ParameterServerGetString.srv
+    ParameterServerSetString.srv
+
+    ParameterServerGetInt64.srv
+    ParameterServerSetInt64.srv
+
+    ParameterServerGetBool.srv
+    ParameterServerSetBool.srv
+
+    ParameterServerHas.srv
+
+    ParameterServerDelete.srv
+)
+
+generate_messages()
+
 catkin_package(
     INCLUDE_DIRS include ${OPENSPLICE_INCLUDE_DIRS}
     LIBRARIES rclcpp ${OPENSPLICE_LIBRARIES}
@@ -22,7 +40,8 @@ catkin_package(
 )
 
 add_library(rclcpp src/rclcpp/rclcpp.cpp src/rclcpp/node/node.cpp)
-target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES})
+target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES} ${catkin_LIBRARIES} rclcpp_dds_msgs)
+add_dependencies(rclcpp ${catkin_EXPORTED_TARGETS} std_msgs_gencpp rclcpp_gencpp std_msgs_dds_msgs_gencpp genidlcpp)
 
 install(TARGETS rclcpp
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

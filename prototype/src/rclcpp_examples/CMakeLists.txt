@@ -5,8 +5,6 @@ find_package(catkin REQUIRED COMPONENTS rclcpp std_msgs message_generation)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-#add_message_files(DIRECTORY msg FILES AddTwoIntsRequest.msg AddTwoIntsResponse.msg)
-
 add_service_files(DIRECTORY srv FILES AddTwoInts.srv)
 
 generate_messages()
@@ -22,9 +20,13 @@ target_link_libraries(listener ${catkin_LIBRARIES})
 add_dependencies(listener ${catkin_EXPORTED_TARGETS})
 
 add_executable(add_two_ints_server src/add_two_ints_server.cpp)
-target_link_libraries(add_two_ints_server ${catkin_LIBRARIES} std_msgs_dds_msgs rclcpp_examples_dds_msgs)
-add_dependencies(add_two_ints_server ${catkin_EXPORTED_TARGETS} rclcpp_examples_gencpp)
+target_link_libraries(add_two_ints_server ${catkin_LIBRARIES} rclcpp_examples_dds_msgs)
+add_dependencies(add_two_ints_server ${catkin_EXPORTED_TARGETS} rclcpp_examples_gencpp std_msgs_gencpp)
 
 add_executable(add_two_ints_client src/add_two_ints_client.cpp)
-target_link_libraries(add_two_ints_client ${catkin_LIBRARIES} std_msgs_dds_msgs rclcpp_examples_dds_msgs)
-add_dependencies(add_two_ints_client ${catkin_EXPORTED_TARGETS} rclcpp_examples_gencpp)
+target_link_libraries(add_two_ints_client ${catkin_LIBRARIES} rclcpp_examples_dds_msgs)
+add_dependencies(add_two_ints_client ${catkin_EXPORTED_TARGETS} rclcpp_examples_gencpp std_msgs_gencpp)
+
+add_executable(parameter_client src/parameter_client.cpp)
+target_link_libraries(parameter_client ${catkin_LIBRARIES} rclcpp_dds_msgs)
+add_dependencies(parameter_client ${catkin_EXPORTED_TARGETS} rclcpp_gencpp)
