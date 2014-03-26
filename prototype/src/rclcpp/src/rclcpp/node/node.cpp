@@ -150,3 +150,127 @@ void Node::destroy_publisher(std::string topic_name)
     }
     this->publishers_.erase(topic_name);
 }
+
+rclcpp::parameter::ParameterClient::Ptr Node::create_parameter_client()
+{
+    auto parameter_client_get_string = this->create_client<ParameterServerGetString>(
+        "parameter_server_get_string");
+
+    auto parameter_client_set_string = this->create_client<ParameterServerSetString>(
+        "parameter_server_set_string");
+
+    auto parameter_client_get_int64 = this->create_client<ParameterServerGetInt64>(
+        "parameter_server_get_int64");
+
+    auto parameter_client_set_int64 = this->create_client<ParameterServerSetInt64>(
+        "parameter_server_set_int64");
+
+    auto parameter_client_get_bool = this->create_client<ParameterServerGetBool>(
+        "parameter_server_get_bool");
+
+    auto parameter_client_set_bool = this->create_client<ParameterServerSetBool>(
+        "parameter_server_set_bool");
+
+    auto parameter_client_has = this->create_client<ParameterServerHas>(
+        "parameter_server_has");
+
+    auto parameter_client_delete = this->create_client<ParameterServerDelete>(
+        "parameter_server_delete");
+
+    auto parameter_client = rclcpp::parameter::ParameterClient::Ptr(
+        new rclcpp::parameter::ParameterClient(
+            parameter_client_get_string, parameter_client_set_string,
+            parameter_client_get_int64, parameter_client_set_int64,
+            parameter_client_get_bool, parameter_client_set_bool,
+            parameter_client_has, parameter_client_delete
+        )
+    );
+    return parameter_client;
+}
+
+rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
+{
+    rclcpp::parameter::ParameterServerHandler::Ptr parameter_server_handler(
+        new rclcpp::parameter::ParameterServerHandler()
+    );
+
+    auto parameter_server_get_string = this->create_service<rclcpp::ParameterServerGetString>(
+        "parameter_server_get_string",
+         std::bind(
+            &rclcpp::parameter::ParameterServerHandler::get_param_string,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_set_string = this->create_service<rclcpp::ParameterServerSetString>(
+        "parameter_server_set_string",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::set_param_string,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_get_int64 = this->create_service<rclcpp::ParameterServerGetInt64>(
+        "parameter_server_get_int64",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::get_param_int64,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_set_int64 = this->create_service<rclcpp::ParameterServerSetInt64>(
+        "parameter_server_set_int64",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::set_param_int64,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_get_bool = this->create_service<rclcpp::ParameterServerGetBool>(
+        "parameter_server_get_bool",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::get_param_bool,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_set_bool = this->create_service<rclcpp::ParameterServerSetBool>(
+        "parameter_server_set_bool",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::set_param_bool,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_has = this->create_service<rclcpp::ParameterServerHas>(
+        "parameter_server_has",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::has_param,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    auto parameter_server_delete = this->create_service<rclcpp::ParameterServerDelete>(
+        "parameter_server_delete",
+        std::bind(
+            &rclcpp::parameter::ParameterServerHandler::delete_param,
+            parameter_server_handler, std::placeholders::_1, std::placeholders::_2
+        )
+    );
+
+    rclcpp::parameter::ParameterServer::Ptr parameter_server(
+        new rclcpp::parameter::ParameterServer(
+            parameter_server_handler,
+            parameter_server_get_string,
+            parameter_server_set_string,
+            parameter_server_get_int64,
+            parameter_server_set_int64,
+            parameter_server_get_bool,
+            parameter_server_set_bool,
+            parameter_server_has,
+            parameter_server_delete
+        )
+    );
+
+    return parameter_server;
+}
