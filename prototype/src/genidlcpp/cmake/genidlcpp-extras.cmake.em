@@ -85,9 +85,19 @@ macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_G
   #message("msg_convert ${ARG_PKG} ${ARG_MSG} ${ARG_IFLAGS} ${ARG_MSG_DEPS}")
 
   get_filename_component(MSG_SHORT_NAME ${ARG_MSG} NAME_WE)
-  set(GEN_OUTPUT_FILES
-    "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.h"
-  )
+  get_filename_component(MSG_EXT ${ARG_MSG} EXT)
+  if(${MSG_EXT} STREQUAL ".msg")
+    set(GEN_OUTPUT_FILES
+      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.h"
+    )
+  elseif(${MSG_EXT} STREQUAL ".srv")
+    set(GEN_OUTPUT_FILES
+      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Request_convert.h"
+      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}Response_convert.h"
+    )
+  else()
+    message(FATAL_ERROR "Unrecognized message/service extension ${MSG_EXT}")
+  endif()
 
   set(COMMAND ${GENIDLCPP_BIN} ${ARG_MSG} ${ARG_PKG} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR})
 
