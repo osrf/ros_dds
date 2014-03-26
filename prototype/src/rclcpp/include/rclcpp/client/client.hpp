@@ -47,16 +47,20 @@ namespace rclcpp
 
             typename ROSService::Response::ConstPtr call(typename ROSService::Request &req)
             {
-                 shared_future f = this->async_call(req);
-                 // NOTE The version (4.6) of GCC that ships with Ubuntu 12.04
-                 // is broken, wait_for should return a std::future_status,
-                 // according to the C++11 spec, not a bool as is GCC's case
-                 std::future_status status;
-                 do {
-                     this->node_->spin_once();
-                     status = f.wait_for(std::chrono::milliseconds(100));
-                 } while (status != std::future_status::ready);
-                 return f.get();
+                shared_future f = this->async_call(req);
+                // NOTE The version (4.6) of GCC that ships with Ubuntu 12.04
+                // is broken, wait_for should return a std::future_status,
+                // according to the C++11 spec, not a bool as is GCC's case
+                std::future_status status;
+                do {
+                    this->node_->spin_once();
+                    status = f.wait_for(std::chrono::milliseconds(100));
+                    if (!this->node_->is_running())
+                    {
+                       throw std::exception();
+                    }
+                } while (status != std::future_status::ready);
+                return f.get();
             }
 
             shared_future async_call(typename ROSService::Request &req) {
