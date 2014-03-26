@@ -39,10 +39,13 @@ namespace rclcpp
 
             void handle_response(typename ROSService::Response::ConstPtr res)
             {
-                std::cout << "Got response" << std::endl;
-                shared_promise call_promise = this->pending_calls_[res->req_id];
-                this->pending_calls_.erase(res->req_id);
-                call_promise->set_value(res);
+                if (res->client_id == client_id_)
+                {
+                    std::cout << "Got response" << std::endl;
+                    shared_promise call_promise = this->pending_calls_[res->req_id];
+                    this->pending_calls_.erase(res->req_id);
+                    call_promise->set_value(res);
+                }
             }
 
             typename ROSService::Response::ConstPtr call(typename ROSService::Request &req)

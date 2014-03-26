@@ -244,7 +244,7 @@ public:
         // DDS does not support topic names that contain - or #
         boost::erase_all(client_id, "-");
 
-        std::string topic_name = service_name + "_response_" + client_id;
+        std::string topic_name = service_name + "_response";// + client_id;
         std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
         typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher(
