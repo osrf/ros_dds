@@ -1,0 +1,8 @@
+string client_id
+int64 req_id
+int64 a
+int64 b
+---
+string client_id
+int64 req_id
+int64 sum
