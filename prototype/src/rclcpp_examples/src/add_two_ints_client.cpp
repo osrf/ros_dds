@@ -23,8 +23,9 @@ int main(int argc, char** argv)
     req.a = 2;
     req.b = 3;
 
-    auto response = client->call(req);
-    std::cout << "Sum: " << response->sum << std::endl;   
+    auto response = client->async_call(req);
+    //std::cout << "Sum: " << response->sum << std::endl;   
 
+    node->spin();
     return 0;
 }

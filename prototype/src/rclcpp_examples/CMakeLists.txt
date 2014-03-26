@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rclcpp_examples)
 
-find_package(catkin REQUIRED COMPONENTS rclcpp std_msgs)
+find_package(catkin REQUIRED COMPONENTS rclcpp std_msgs message_generation)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-add_message_files(DIRECTORY msg FILES AddTwoIntsRequest.msg AddTwoIntsResponse.msg)
+#add_message_files(DIRECTORY msg FILES AddTwoIntsRequest.msg AddTwoIntsResponse.msg)
+
+add_service_files(DIRECTORY srv FILES AddTwoInts.srv)
+
 generate_messages()
 
 catkin_package()

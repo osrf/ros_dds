@@ -18,7 +18,7 @@ node default {
 
     apt::source { 'ros-latest':
         location => 'http://packages.ros.org/ros/ubuntu',
-        release => 'precise',
+        release => 'raring',
         repos => 'main',
         require => Apt::Key['ros-latest'];
     }
@@ -33,6 +33,7 @@ node default {
         'ros-hydro-ros-base':
              ensure => latest,
              require => Apt::Source['ros-latest'];
+        'python-vcstool': ensure => latest;
     }
 
     file { ['/etc', '/etc/opensplice', '/etc/opensplice/config']:
@@ -58,11 +59,11 @@ node default {
         content => template('opensplice/rc.local.erb')
     }
 
-    augeas { 'multicast_routing_augeas':
-        context => "/files/etc/network/interfaces",
-        changes => [
-            "set iface[. = 'eth1']/up '/sbin/ip route add 224.0.0.0/4 dev eth1'",
-            "set iface[. = 'eth1']/down '/sbin/ip route del 224.0.0.0/4 dev eth1'",
-        ],
-    }
+#    augeas { 'multicast_routing_augeas':
+#        context => "/files/etc/network/interfaces",
+#        changes => [
+#            "set iface[. = 'eth1']/up '/sbin/ip route add 224.0.0.0/4 dev eth1'",
+#            "set iface[. = 'eth1']/down '/sbin/ip route del 224.0.0.0/4 dev eth1'",
+#        ],
+#    }
 }

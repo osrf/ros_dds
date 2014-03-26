@@ -40,20 +40,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       virtualbox__intnet: "dds-network"
   end
 
-  config.vm.define "host1t" do |host1|
-    host1.vm.box = "trusty64"
+  config.vm.define "host1r" do |host1|
+    host1.vm.box = "raring64"
     host1.vm.network "private_network", ip: "10.0.4.20",
       virtualbox__intnet: "dds-network"
   end
 
-  config.vm.define "host2t" do |host2|
-    host2.vm.box = "trusty64"
+  config.vm.define "host2r" do |host2|
+    host2.vm.box = "raring64"
     host2.vm.network "private_network", ip: "10.0.4.21",
       virtualbox__intnet: "dds-network"
   end
 
-  config.vm.define "host3t" do |host3|
-    host3.vm.box = "trusty64"
+  config.vm.define "host3r" do |host3|
+    host3.vm.box = "raring64"
     host3.vm.network "private_network", ip: "10.0.4.22",
       virtualbox__intnet: "dds-network"
   end

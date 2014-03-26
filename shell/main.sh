@@ -15,7 +15,7 @@ FOUND_YUM=$?
 
 if [ "${FOUND_APT}" -eq '0' ]; then
   apt-get -q -y update
-  apt-get -q -y install ruby-json libaugeas-dev pkg-config
+  apt-get -q -y install ruby-json libaugeas-dev pkg-config ruby1.9.1-dev
   echo 'ruby-json and augeas installed.'
 fi
 
@@ -36,19 +36,19 @@ else
   echo 'git found.'
 fi
 
-if [ "$(gem search -i rubygems-update)" = "false" ]; then
-  gem install rubygems-update --no-rdoc --no-ri
-else
-  gem update rubygems-update --no-rdoc --no-ri
-fi
+#if [ "$(gem search -i rubygems-update)" = "false" ]; then
+#  gem install rubygems-update --no-rdoc --no-ri
+#else
+#  gem update rubygems-update --no-rdoc --no-ri
+#fi
 
-gem update --system --no-rdoc --no-ri
+#REALLY_GEM_UPDATE_SYSTEM=1 gem update --system --no-rdoc --no-ri
 
-if [ "$(gem search -i ruby-augeas)" = "false" ]; then
-  gem install ruby-augeas --no-rdoc --no-ri
-else
-  gem update ruby-augeas --no-rdoc --no-ri
-fi
+#if [ "$(gem search -i ruby-augeas)" = "false" ]; then
+#  gem install ruby-augeas --no-rdoc --no-ri
+#else
+#  gem update ruby-augeas --no-rdoc --no-ri
+#fi
 
 if [ "$(gem search -i puppet)" = "false" ]; then
   gem install puppet --no-rdoc --no-ri

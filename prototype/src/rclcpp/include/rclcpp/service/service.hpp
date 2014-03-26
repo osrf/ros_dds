@@ -5,8 +5,6 @@
 #include <memory>
 
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/String.h>
-#include "std_msgs/dds_impl/String_convert.h"
 
 #include <rclcpp/node/node.hpp>
 #include <rclcpp/publisher/publisher.hpp>
