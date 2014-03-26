@@ -209,22 +209,21 @@ public:
      *
      *     void callback(ROSRequestType::ConstPtr req, ROSResponseType::Ptr res);
      */
-    template <typename ROSRequestType, typename ROSResponseType>
-    typename Service<ROSRequestType, ROSResponseType>::Ptr create_service(const std::string &service_name, typename Service<ROSRequestType, ROSResponseType>::CallbackType cb)
+    template <typename ROSService>
+    typename Service<ROSService>::Ptr create_service(const std::string &service_name, typename Service<ROSService>::CallbackType cb)
     {
         // XXX hardcoded queue_size
         size_t queue_size = 0;
 
-        typename rclcpp::service::Service<ROSRequestType, ROSResponseType>::Ptr service(
-            new rclcpp::service::Service<ROSRequestType, ROSResponseType>(
-                service_name, this, cb));
-        typename rclcpp::subscription::Subscription<ROSRequestType>::CallbackType f(
-            std::bind(&rclcpp::service::Service<ROSRequestType, ROSResponseType>::handle_request,
+        typename rclcpp::service::Service<ROSService>::Ptr service(
+            new rclcpp::service::Service<ROSService>(service_name, this, cb));
+        typename rclcpp::subscription::Subscription<typename ROSService::Request>::CallbackType f(
+            std::bind(&rclcpp::service::Service<ROSService>::handle_request,
                       service, std::placeholders::_1));
 
         // Create a Subscription for the Service's request channel
-        typename rclcpp::subscription::Subscription<ROSRequestType>::Ptr request_subscription(
-            this->create_subscription<ROSRequestType>(service_name + "_request", queue_size, f));
+        typename rclcpp::subscription::Subscription<typename ROSService::Request>::Ptr request_subscription(
+            this->create_subscription<typename ROSService::Request>(service_name + "_request", queue_size, f));
 
         return service;
     }
@@ -234,8 +233,8 @@ public:
      *
      * The client is templated on the ROS Request Type and ROS Response Type.
      */
-    template <typename ROSRequestType, typename ROSResponseType>
-    typename Client<ROSRequestType, ROSResponseType>::Ptr create_client(const std::string &service_name)
+    template <typename ROSService>
+    typename Client<ROSService>::Ptr create_client(const std::string &service_name)
     {
         // XXX hardcoded queue_size
         size_t queue_size = 0;
@@ -248,19 +247,20 @@ public:
         std::string topic_name = service_name + "_response_" + client_id;
         std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
-        typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher(
-            this->create_publisher<ROSRequestType>(service_name + "_request", queue_size));
+        typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher(
+            this->create_publisher<typename ROSService::Request>(
+                service_name + "_request", queue_size));
 
-        typename rclcpp::client::Client<ROSRequestType, ROSResponseType>::Ptr client(
-            new rclcpp::client::Client<ROSRequestType, ROSResponseType>(client_id, publisher, this));
+        typename rclcpp::client::Client<ROSService>::Ptr client(
+            new rclcpp::client::Client<ROSService>(client_id, publisher, this));
 
-        typename rclcpp::subscription::Subscription<ROSResponseType>::CallbackType f(
-            std::bind(&rclcpp::client::Client<ROSRequestType, ROSResponseType>::handle_response,
+        typename rclcpp::subscription::Subscription<typename ROSService::Response>::CallbackType f(
+            std::bind(&rclcpp::client::Client<ROSService>::handle_response,
                       client, std::placeholders::_1));
 
         // Create a Subscription for the Client's response channel
-        typename rclcpp::subscription::Subscription<ROSResponseType>::Ptr response_subscription(
-            this->create_subscription<ROSResponseType>(topic_name, queue_size, f));
+        typename rclcpp::subscription::Subscription<typename ROSService::Response>::Ptr response_subscription(
+            this->create_subscription<typename ROSService::Response>(topic_name, queue_size, f));
 
         return client;
     }

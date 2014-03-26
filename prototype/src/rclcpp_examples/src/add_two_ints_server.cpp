@@ -1,5 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 
+#include <rclcpp_examples/AddTwoInts.h>
+
 #include <std_msgs/Int32.h>
 #include <rclcpp_examples/AddTwoIntsRequest.h>
 #include <rclcpp_examples/AddTwoIntsResponse.h>
@@ -22,7 +24,7 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
-    rclcpp::Service<rclcpp_examples::AddTwoIntsRequest, rclcpp_examples::AddTwoIntsResponse>::Ptr service = node->create_service<rclcpp_examples::AddTwoIntsRequest, rclcpp_examples::AddTwoIntsResponse>("add_two_ints", add);
+    rclcpp::Service<rclcpp_examples::AddTwoInts>::Ptr service = node->create_service<rclcpp_examples::AddTwoInts>("add_two_ints", add);
     node->spin();
     return 0;
 }

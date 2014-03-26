@@ -1,5 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 
+#include <rclcpp_examples/AddTwoInts.h>
+
 #include <std_msgs/String.h>
 #include "std_msgs/dds_impl/String_convert.h"
 
@@ -18,7 +20,7 @@ int main(int argc, char** argv)
     rclcpp::init(argc, argv);
 
     rclcpp::Node::Ptr node = rclcpp::create_node("add_two_ints_server");
-    auto client = node->create_client<rclcpp_examples::AddTwoIntsRequest, rclcpp_examples::AddTwoIntsResponse>("add_two_ints");
+    auto client = node->create_client<rclcpp_examples::AddTwoInts>("add_two_ints");
     rclcpp_examples::AddTwoIntsRequest req;
     req.a = 2;
     req.b = 3;

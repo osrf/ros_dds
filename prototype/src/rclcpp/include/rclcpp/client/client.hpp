@@ -25,21 +25,19 @@ namespace rclcpp
 {
     namespace client
     {
-        template <typename ROSRequestType, typename ROSResponseType>
+        template <typename ROSService>
         class Client
         {
         public:
-            typedef std::shared_ptr<const ROSRequestType> req_shared_ptr;
-            typedef std::shared_ptr<const ROSResponseType> res_shared_ptr;
-            typedef std::shared_ptr< std::promise<typename ROSResponseType::ConstPtr> > shared_promise;
-            typedef std::shared_ptr< Client<ROSRequestType, ROSResponseType> > Ptr;
-            typedef std::shared_future<typename ROSResponseType::ConstPtr> shared_future;
+            typedef std::shared_ptr< std::promise<typename ROSService::Response::ConstPtr> > shared_promise;
+            typedef std::shared_ptr< Client<ROSService> > Ptr;
+            typedef std::shared_future<typename ROSService::Response::ConstPtr> shared_future;
 
 
-            Client(const std::string& client_id, typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher, rclcpp::node::Node *node) : client_id_(client_id), publisher_(publisher), node_(node), req_id_(0) {}
+            Client(const std::string& client_id, typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher, rclcpp::node::Node *node) : client_id_(client_id), publisher_(publisher), node_(node), req_id_(0) {}
             ~Client() {}
 
-            void handle_response(typename ROSResponseType::ConstPtr res)
+            void handle_response(typename ROSService::Response::ConstPtr res)
             {
                 std::cout << "Got response" << std::endl;
                 shared_promise call_promise = this->pending_calls_[res->req_id];
@@ -47,7 +45,7 @@ namespace rclcpp
                 call_promise->set_value(res);
             }
 
-            typename ROSResponseType::ConstPtr call(ROSRequestType &req)
+            typename ROSService::Response::ConstPtr call(typename ROSService::Request &req)
             {
                  shared_future f = this->async_call(req);
                  // NOTE The version (4.6) of GCC that ships with Ubuntu 12.04
@@ -61,11 +59,11 @@ namespace rclcpp
                  return f.get();
             }
 
-            shared_future async_call(ROSRequestType &req) {
+            shared_future async_call(typename ROSService::Request &req) {
                 req.req_id = ++(this->req_id_);
                 req.client_id = client_id_;
 
-                shared_promise call_promise(new std::promise<typename ROSResponseType::ConstPtr>);
+                shared_promise call_promise(new std::promise<typename ROSService::Response::ConstPtr>);
                 pending_calls_[req.req_id] = call_promise;
 
                 this->publisher_->publish(req);
@@ -74,7 +72,7 @@ namespace rclcpp
             }
 
         private:
-            typename rclcpp::publisher::Publisher<ROSRequestType>::Ptr publisher_;
+            typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher_;
             std::map<int, shared_promise> pending_calls_;
             std::string client_id_;
             int req_id_;
