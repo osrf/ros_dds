@@ -1,7 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <std_msgs/String.h>
-#include "std_msgs/dds_impl/String_convert.h"
+#include "std_msgs/impl/String_pubsub.hpp"
 
 #include <iostream>
 
@@ -17,6 +17,8 @@ int main(int argc, char** argv)
     auto node = rclcpp::create_node("listener");
 
     auto subscription = node->create_subscription<std_msgs::String>("chatter", 10, callback);
+
+    std::cout << "Listener Ready, spinning..." << std::endl;
 
     node->spin();
 

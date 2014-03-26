@@ -3,12 +3,6 @@
 #include <exception>
 #include <string>
 
-#include <ccpp.h>
-
-#include <genidlcpp/resolver.h>
-
-#include <rclcpp/impl/check_status.hpp>
-
 namespace rclcpp
 {
 
@@ -26,64 +20,55 @@ class DuplicatePublisherException : public std::exception
     }
 };
 
-class PublisherInterface
-{
-public:
-	typedef std::shared_ptr<PublisherInterface> Ptr;
-    virtual std::string get_topic_name() = 0;
+class Publisher;
 
+namespace impl
+{
+
+class GenericPublisher
+{
+    friend class rclcpp::publisher::Publisher;
+    std::string topic_name_;
+public:
+    GenericPublisher(const std::string &topic_name)
+    : topic_name_(topic_name)
+    {}
 };
 
 template <typename ROSMsgType>
-class Publisher : public PublisherInterface
+class SpecificPublisherImpl;
+
+template <typename ROSMsgType>
+class SpecificPublisher : public GenericPublisher
 {
-    typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-    friend class node::Node;
-    Publisher(std::string topic_name, size_t queue_size,
-              DDS::Publisher_var dds_publisher,
-              DDS::Topic_var dds_topic,
-              DDS::DataWriter_var dds_topic_datawriter)
-    : topic_name_(topic_name), queue_size_(queue_size),
-      dds_publisher_(dds_publisher), dds_topic_(dds_topic),
-      dds_topic_datawriter_(dds_topic_datawriter)
-    {
-        this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
-        checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
-    }
-
-    Publisher(const Publisher &) = delete;
+    SpecificPublisherImpl<ROSMsgType> * impl_;
 public:
-    typedef std::shared_ptr<Publisher<ROSMsgType> > Ptr;
-    ~Publisher() {}
+    SpecificPublisher(const std::string &topic_name, SpecificPublisherImpl<ROSMsgType> * impl)
+    : GenericPublisher(topic_name), impl_(impl)
+    {}
+    void publish(const ROSMsgType &msg);
+};
 
+} // namespace impl
+
+class Publisher
+{
+public:
+    typedef std::shared_ptr<Publisher> Ptr;
+    Publisher(impl::GenericPublisher * impl);
+    ~Publisher();
+
+    template <typename ROSMsgType>
     void publish(const ROSMsgType &msg)
     {
-        typename r::DDSMsgType dds_msg;
-        dds_impl::DDSTypeResolver<ROSMsgType>::convert_ros_message_to_dds(msg, dds_msg);
-        DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
-        DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
-        checkStatus(status, "DDSMsgDataWriter_t::write");
+        return static_cast<impl::SpecificPublisher<ROSMsgType> * >(this->impl_)->publish(msg);
     }
 
-    void publish(typename ROSMsgType::ConstPtr msg)
-    {
-        this->publish(*msg);
-    }
-
-    std::string get_topic_name()
-    {
-        return this->topic_name_;
-    }
+    std::string get_topic_name();
 
 private:
-    std::string topic_name_;
-    size_t queue_size_;
+    impl::GenericPublisher * impl_;
 
-    DDS::Publisher_var dds_publisher_;
-    DDS::Topic_var dds_topic_;
-    DDS::DataWriter_var dds_topic_datawriter_;
-
-    typename r::DDSMsgDataWriterType_var data_writer_;
 };
 
 }

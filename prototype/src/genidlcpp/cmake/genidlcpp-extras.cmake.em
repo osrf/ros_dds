@@ -1,4 +1,5 @@
 find_package(opensplice REQUIRED)
+find_package(rclcpp REQUIRED)
 include_directories(${OPENSPLICE_INCLUDE_DIRS})
 
 set(GENIDLCPP_PP_BIN "idlpp")
@@ -92,7 +93,8 @@ macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_G
   get_filename_component(MSG_EXT ${ARG_MSG} EXT)
   if(${MSG_EXT} STREQUAL ".msg")
     set(GEN_OUTPUT_FILES
-      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_convert.h"
+      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_pubsub.hpp"
+      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_pubsub.cpp"
     )
   elseif(${MSG_EXT} STREQUAL ".srv")
     set(GEN_OUTPUT_FILES
@@ -103,7 +105,7 @@ macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_G
     message(FATAL_ERROR "Unrecognized message/service extension ${MSG_EXT}")
   endif()
 
-  set(COMMAND ${GENIDLCPP_BIN} ${ARG_MSG} ${ARG_PKG} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR})
+  set(COMMAND ${GENIDLCPP_BIN} ${ARG_MSG} ${ARG_PKG} -o "${ARG_GEN_OUTPUT_DIR}" -e ${GENIDLCPP_TEMPLATE_DIR})
 
   string(REPLACE ";" " " COMMAND_STR "${COMMAND}")
   #message("${COMMAND_STR}")
@@ -112,10 +114,14 @@ macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_G
 
   assert(CATKIN_ENV)
   add_custom_command(OUTPUT ${GEN_OUTPUT_FILES}
-    DEPENDS ${GENIDLCPP_BIN} ${ARG_MSG} "${GENIDLCPP_TEMPLATE_DIR}/msg_convert.h.template"
+    DEPENDS
+      ${GENIDLCPP_BIN}
+      ${ARG_MSG}
+      "${GENIDLCPP_TEMPLATE_DIR}/msg_pubsub.hpp.template"
+      "${GENIDLCPP_TEMPLATE_DIR}/msg_pubsub.cpp.template"
     COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${COMMAND}
     COMMENT "Generating conversion code between ROS and DDS message instances for ${ARG_PKG}/${MSG_NAME}"
-    )
+  )
   list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILES})
 
   genidlcpp_append_include_dirs()
@@ -132,16 +138,16 @@ macro(_generate_module_idlcpp ARG_PKG ARG_GEN_OUTPUT_DIR)
     list(APPEND dds_impl_libs ${dep}_dds_msgs)
   endforeach()
   if(NOT "${ARGN}" STREQUAL "")
-    add_library(${PROJECT_NAME}_dds_msgs ${ARGN})
+    add_library(${PROJECT_NAME} ${ARGN})
     # This dependency is here to prevent simultaneous invocation of idlpp
     # on the same .idl file.  In that situation, the two invocations fight
     # over access to a temporary intermediate file and cause intermittent
     # crashes.  I'm not sure exactly why we were getting simultanous
     # invocations in the first place, but this dependency seems to prevent
     # it.
-    add_dependencies(${PROJECT_NAME}_dds_msgs ${PROJECT_NAME}_genidlcpp)
-    target_link_libraries(${PROJECT_NAME}_dds_msgs ${dds_impl_libs} ${OPENSPLICE_LIBRARIES})
-    list(APPEND ${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME}_dds_msgs)
+    add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_genidlcpp)
+    target_link_libraries(${PROJECT_NAME} ${dds_impl_libs} ${OPENSPLICE_LIBRARIES} ${rclcpp_LIBRARIES})
+    list(APPEND ${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME})
   endif()
 endmacro()
 

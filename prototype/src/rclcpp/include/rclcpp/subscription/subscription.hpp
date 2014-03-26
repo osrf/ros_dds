@@ -4,105 +4,90 @@
 #include <iostream>
 #include <memory>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-
-#include <ccpp_dds_dcps.h>
-#include <dds_dcps.h>
-
-#include <genidlcpp/resolver.h>
-
 namespace rclcpp
 {
 
-// Forward declare Node class for friendship with Publisher Interface
-namespace node {class Node;}
+/* Forward declare Node class for friendship with Publisher Interface */
+namespace node {
+
+class Node;
+
+namespace impl
+{
+
+class NodeImpl;
+
+} // namespace impl
+
+} // namespace node
 
 namespace subscription
 {
 
-class SubscriptionInterface
+namespace impl
 {
+
+class GenericSubscription
+{
+    friend class rclcpp::node::impl::NodeImpl;
 public:
-    typedef std::shared_ptr<SubscriptionInterface> Ptr;
-    virtual bool spin_once() = 0;
-    virtual bool spin_some() = 0;
-    virtual DDS::StatusCondition * get_status_condition() = 0;
+    virtual ~GenericSubscription() {};
+    virtual bool spin_some(size_t spin_limit) = 0;
 };
 
 template <typename ROSMsgType>
-class Subscription : public SubscriptionInterface
+class SpecificSubscriptionImpl;
+
+template <typename ROSMsgType>
+class SpecificSubscription : public GenericSubscription
 {
+    friend class rclcpp::node::impl::NodeImpl;
+    SpecificSubscriptionImpl<ROSMsgType> * impl_;
 public:
-    typedef std::function<void(typename ROSMsgType::ConstPtr)> CallbackType;
-    typedef std::shared_ptr<Subscription<ROSMsgType> > Ptr;
-private:
-    typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-    friend class node::Node;
-    Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb)
-    : topic_name_(topic_name), data_reader_(data_reader), cb_(cb)
+    SpecificSubscription(SpecificSubscriptionImpl<ROSMsgType> * impl)
+    : impl_(impl)
+    {}
+    ~SpecificSubscription()
     {
-        this->condition_ = this->data_reader_->get_statuscondition();
-        this->condition_->set_enabled_statuses(DDS::DATA_AVAILABLE_STATUS);
+        delete this->impl_;
     }
 
-    bool spin_(DDS::ULong read_length)
-    {
-        typename r::DDSMsgSeqType_var dds_msg_seq = new typename r::DDSMsgSeqType();
-        DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
-        this->data_reader_->take(
-            dds_msg_seq,
-            sample_info_seq,
-            read_length,
-            DDS::ANY_SAMPLE_STATE,
-            DDS::ANY_VIEW_STATE,
-            DDS::ALIVE_INSTANCE_STATE
-        );
+    bool spin_some(size_t spin_limit);
 
-        bool result = true;
-        if (dds_msg_seq->length() == 0)
-        {
-            result = false;
-        }
+};
 
-        for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
-        {
-            typename ROSMsgType::Ptr ros_msg(new ROSMsgType());
-            dds_impl::DDSTypeResolver<ROSMsgType>::convert_dds_message_to_ros(dds_msg_seq[i], (*ros_msg.get()));
-            try {
-                this->cb_(ros_msg);
-            } catch (const std::exception& e) {
-                std::cerr << "Error handling callback for subscription to topic '" << this->topic_name_ << "':"
-                          << std::endl << e.what() << std::endl;
-            }
-        }
-        this->data_reader_->return_loan(dds_msg_seq, sample_info_seq);
-        return result;
-   }
+} // namespace impl
+
+class Subscription
+{
 public:
-    ~Subscription() {}
+    typedef std::shared_ptr<Subscription> Ptr;
+private:
+    friend class node::Node;
+    friend class rclcpp::node::impl::NodeImpl;
+    Subscription(const std::string &topic_name, impl::GenericSubscription * impl_ptr)
+    : topic_name_(topic_name), impl_(impl_ptr)
+    {}
 
-    DDS::StatusCondition * get_status_condition()
+public:
+    ~Subscription()
     {
-        return this->condition_;
+        delete this->impl_;
     }
 
     bool spin_once()
     {
-        return this->spin_(1);
+        return this->impl_->spin_some(1);
     }
 
     bool spin_some()
     {
-        return this->spin_(DDS::LENGTH_UNLIMITED);
+        return this->impl_->spin_some(0);
     }
 
 private:
-    typename r::DDSMsgDataReaderType_var data_reader_;
-    CallbackType cb_;
     std::string topic_name_;
-    DDS::StatusCondition * condition_;
+    impl::GenericSubscription * impl_;
 };
 
 }
