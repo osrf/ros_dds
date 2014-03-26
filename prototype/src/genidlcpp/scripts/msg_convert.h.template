@@ -79,7 +79,7 @@ struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
 @[elif field.is_builtin]@
         dds_message.@(field.name)_[i] = ros_message.@(field.name)[i];
 @[else]@
-        convert_ros_message_to_dds(ros_message.@(field.name)[i], dds_message.@(field.name)_[i]);
+        ::dds_impl::DDSTypeResolver<@(field.base_type.replace('/', '::'))>::convert_ros_message_to_dds(ros_message.@(field.name)[i], dds_message.@(field.name)_[i]);
 @[end if]@
       }
     }
@@ -91,7 +91,7 @@ struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
 @[elif field.is_builtin]@
     dds_message.@(field.name)_ = ros_message.@(field.name);
 @[else]@
-    convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
+    ::dds_impl::DDSTypeResolver<@(field.base_type.replace('/', '::'))>::convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
 @[end if]@
 
 @[end for]@
@@ -126,7 +126,7 @@ struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
 @[elif field.is_builtin]@
         ros_message.@(field.name)[i] = dds_message.@(field.name)_[i];
 @[else]@
-        convert_dds_message_to_ros(dds_message.@(field.name)_[i], ros_message.@(field.name)[i]);
+        ::dds_impl::DDSTypeResolver<@(field.base_type.replace('/', '::'))>::convert_dds_message_to_ros(dds_message.@(field.name)_[i], ros_message.@(field.name)[i]);
 @[end if]@
       }
     }
@@ -136,7 +136,7 @@ struct DDSTypeResolver<@(spec.package)::@(spec.short_name)>
 @[elif field.is_builtin]@
     ros_message.@(field.name) = dds_message.@(field.name)_;
 @[else]@
-    convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
+    ::dds_impl::DDSTypeResolver<@(field.base_type.replace('/', '::'))>::convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
 @[end if]@
 
 @[end for]@
