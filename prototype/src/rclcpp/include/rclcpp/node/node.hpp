@@ -1,13 +1,14 @@
 #ifndef RCLCPP_RCLCPP_NODE_NODE_HPP_
 #define RCLCPP_RCLCPP_NODE_NODE_HPP_
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
-#include <functional>
-#include <boost/utility.hpp>
-#include <boost/lexical_cast.hpp>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/utility.hpp>
 
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
@@ -119,14 +120,14 @@ public:
     template <typename ROSService>
     typename Service<ROSService>::Ptr create_service(
         const std::string &service_name,
-        std::function<void(typename ROSService::ConstPtr)> cb)
+        typename rclcpp::service::Service<ROSService>::CallbackType cb)
     {
-        // XXX hardcoded queue_size
+        // TODO hardcoded queue_size
         size_t queue_size = 0;
 
         typename rclcpp::service::Service<ROSService>::Ptr service(
             new rclcpp::service::Service<ROSService>(service_name, this, cb));
-        std::function<void(typename ROSService::ConstPtr)> f(
+        std::function<void(typename ROSService::Request::ConstPtr)> f(
             std::bind(&rclcpp::service::Service<ROSService>::handle_request,
                       service, std::placeholders::_1));
 
@@ -145,7 +146,7 @@ public:
     template <typename ROSService>
     typename Client<ROSService>::Ptr create_client(const std::string &service_name)
     {
-        // XXX hardcoded queue_size
+        // TODO hardcoded queue_size
         size_t queue_size = 0;
 
         boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
@@ -156,14 +157,12 @@ public:
         std::string topic_name = service_name + "_response";// + client_id;
         std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
-        rclcpp::publisher::Publisher::Ptr publisher(
-            this->create_publisher<typename ROSService::Request>(
-                service_name + "_request", queue_size));
+        auto publisher = this->create_publisher<typename ROSService::Request>(service_name + "_request", queue_size);
 
         typename rclcpp::client::Client<ROSService>::Ptr client(
             new rclcpp::client::Client<ROSService>(client_id, publisher, this));
 
-        std::function<void(typename ROSService::ConstPtr)> f(
+        std::function<void(typename ROSService::Response::ConstPtr)> f(
             std::bind(&rclcpp::client::Client<ROSService>::handle_response,
                       client, std::placeholders::_1));
 

@@ -45,7 +45,7 @@ public:
         this->cb_(req, res);
         res->req_id = req->req_id;
         res->client_id = req->client_id;
-        publisher_->publish(res);
+        publisher_->publish((*res));
     }
 
 private:
