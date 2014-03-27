@@ -25,7 +25,7 @@ add_library(rclcpp
     src/rclcpp/publisher/publisher.cpp
     src/rclcpp/subscription/subscription.cpp
 )
-target_link_libraries(rclcpp ${OPENSPLICE_LIBRARIES})
+target_link_libraries(rclcpp ${catkin_LIBRARIES})
 
 install(TARGETS rclcpp
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

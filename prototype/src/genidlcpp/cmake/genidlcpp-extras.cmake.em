@@ -93,8 +93,8 @@ macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_G
   get_filename_component(MSG_EXT ${ARG_MSG} EXT)
   if(${MSG_EXT} STREQUAL ".msg")
     set(GEN_OUTPUT_FILES
-      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_pubsub.hpp"
-      "${ARG_GEN_OUTPUT_DIR}/dds_impl/${MSG_SHORT_NAME}_pubsub.cpp"
+      "${ARG_GEN_OUTPUT_DIR}/impl/${MSG_SHORT_NAME}_pubsub.hpp"
+      "${ARG_GEN_OUTPUT_DIR}/impl/${MSG_SHORT_NAME}_pubsub.cpp"
     )
   elseif(${MSG_EXT} STREQUAL ".srv")
     set(GEN_OUTPUT_FILES

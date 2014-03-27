@@ -15,13 +15,13 @@
 #include <rclcpp/client/client.hpp>
 #include <rclcpp/service/service.hpp>
 
-#include <genidlcpp/resolver.h>
-
 namespace rclcpp
 {
 
+namespace node {class Node;}
+
 /* Forward declarations for friends of the Node constructor */
-std::shared_ptr<rclcpp::node::Node> create_node(const std::string &);
+std::shared_ptr<node::Node> create_node(const std::string &);
 void init(int argc, char** argv);
 
 using client::Client;
@@ -43,13 +43,14 @@ namespace impl {class NodeImpl;}
  */
 class Node
 {
+public:
+    typedef std::shared_ptr<Node> Ptr;
 private:
-    friend std::shared_ptr<rclcpp::node::Node> rclcpp::create_node(const std::string &name);
+    friend Node::Ptr rclcpp::create_node(const std::string &name);
     Node(const std::string &name);
 
     Node(const Node &) = delete;
 public:
-    typedef std::shared_ptr<Node> Ptr;
     ~Node();
 
     void shutdown(const std::string &reason="No reason given");
@@ -59,9 +60,9 @@ public:
     std::string get_shutdown_reason();
 
     template <typename ROSMsgType>
-    typename publisher::Publisher<ROSMsgType>::Ptr get_publisher(const std::string &topic_name, size_t queue_size)
+    publisher::Publisher::Ptr get_publisher(const std::string &topic_name, size_t queue_size)
     {
-        typedef publisher::Publisher<ROSMsgType> Pub;
+        typedef publisher::Publisher Pub;
         auto publisher = this->publishers_.find(topic_name);
         if (publisher != this->publishers_.end())
         {
@@ -73,7 +74,6 @@ public:
         }
     }
 
- 
     /* Creates and returns a Publisher based on a ROS Msg Type and a topic name
      *
      * The Publisher is templated on the ROS Msg Type, and there can only be one
@@ -117,19 +117,21 @@ public:
      *     void callback(ROSRequestType::ConstPtr req, ROSResponseType::Ptr res);
      */
     template <typename ROSService>
-    typename Service<ROSService>::Ptr create_service(const std::string &service_name, typename Service<ROSService>::CallbackType cb)
+    typename Service<ROSService>::Ptr create_service(
+        const std::string &service_name,
+        std::function<void(typename ROSService::ConstPtr)> cb)
     {
         // XXX hardcoded queue_size
         size_t queue_size = 0;
 
         typename rclcpp::service::Service<ROSService>::Ptr service(
             new rclcpp::service::Service<ROSService>(service_name, this, cb));
-        typename rclcpp::subscription::Subscription<typename ROSService::Request>::CallbackType f(
+        std::function<void(typename ROSService::ConstPtr)> f(
             std::bind(&rclcpp::service::Service<ROSService>::handle_request,
                       service, std::placeholders::_1));
 
         // Create a Subscription for the Service's request channel
-        typename rclcpp::subscription::Subscription<typename ROSService::Request>::Ptr request_subscription(
+        rclcpp::subscription::Subscription::Ptr request_subscription(
             this->create_subscription<typename ROSService::Request>(service_name + "_request", queue_size, f));
 
         return service;
@@ -154,19 +156,19 @@ public:
         std::string topic_name = service_name + "_response";// + client_id;
         std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
-        typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher(
+        rclcpp::publisher::Publisher::Ptr publisher(
             this->create_publisher<typename ROSService::Request>(
                 service_name + "_request", queue_size));
 
         typename rclcpp::client::Client<ROSService>::Ptr client(
             new rclcpp::client::Client<ROSService>(client_id, publisher, this));
 
-        typename rclcpp::subscription::Subscription<typename ROSService::Response>::CallbackType f(
+        std::function<void(typename ROSService::ConstPtr)> f(
             std::bind(&rclcpp::client::Client<ROSService>::handle_response,
                       client, std::placeholders::_1));
 
         // Create a Subscription for the Client's response channel
-        typename rclcpp::subscription::Subscription<typename ROSService::Response>::Ptr response_subscription(
+        rclcpp::subscription::Subscription::Ptr response_subscription(
             this->create_subscription<typename ROSService::Response>(topic_name, queue_size, f));
 
         return client;

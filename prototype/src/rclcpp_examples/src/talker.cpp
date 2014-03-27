@@ -13,15 +13,19 @@ int main(int argc, char** argv)
 
     rclcpp::Publisher::Ptr publisher = node->create_publisher<std_msgs::String>("chatter", 0);
 
-    std_msgs::String msg;
     int count = 0;
     while(node->is_running())
     {
+        std_msgs::String msg;
+
         std::stringstream ss;
         ss << "[" << count++ << "]: Hello World!";
         msg.data = ss.str();
+
         std::cout << "Sending: " << msg.data << std::endl;
+
         publisher->publish(msg);
+
         sleep(1);
     }
 }
