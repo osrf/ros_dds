@@ -9,7 +9,7 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    auto node = rclcpp::create_node("talker");
+    rclcpp::Node::Ptr node = rclcpp::create_node("talker");
 
     rclcpp::Publisher::Ptr publisher = node->create_publisher<std_msgs::String>("chatter", 0);
 
