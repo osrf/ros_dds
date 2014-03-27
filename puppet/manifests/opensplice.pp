@@ -33,7 +33,9 @@ node default {
         'ros-hydro-ros-base':
              ensure => latest,
              require => Apt::Source['ros-latest'];
-        'python-vcstool': ensure => latest;
+        'python-vcstool':
+             ensure => latest,
+             require => Apt::Source['ros-latest'];
     }
 
     file { ['/etc', '/etc/opensplice', '/etc/opensplice/config']:
