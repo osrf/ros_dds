@@ -24,30 +24,6 @@ import genidl
 #include "@(spec.package)/dds_idl/@(spec.short_name)Request_.idl";
 #include "@(spec.package)/dds_idl/@(spec.short_name)Response_.idl";
 
-@##############################
-@# Includes for dependencies
-@##############################
-@{
-included = set([])
-included_dcps = False
-for field in spec.request.parsed_fields() + spec.response.parsed_fields():
-  if not field.is_builtin:
-    if field.is_header:
-      print('#include "std_msgs/dds_idl/Header_.idl";')
-    else:
-      (package, name) = genmsg.names.package_resource_name(field.base_type)
-      package = package or spec.package # convert '' to package
-      if (package, name) not in included:
-        print('#include "%s/dds_idl/%s_.idl";' % (package, name))
-        included.add((package, name))
-  elif field.type in ['duration', 'time']:
-    if not included_dcps:
-      print('#ifndef OSPL_IDL_COMPILER')
-      print('#include <dds_dcps.idl>')
-      print('#endif')
-      included_dcps = True
-}@
-
 module @(spec.package)
 {
 
@@ -57,8 +33,8 @@ module dds_impl
 struct @(spec.short_name)_
 {
 
-  @(spec.short_name)Request_ request;
-  @(spec.short_name)Response_ response;
+  ::@(spec.package)::dds_impl::@(spec.short_name)Request_ request;
+  ::@(spec.package)::dds_impl::@(spec.short_name)Response_ response;
 
 }; // struct @(spec.short_name)_
 

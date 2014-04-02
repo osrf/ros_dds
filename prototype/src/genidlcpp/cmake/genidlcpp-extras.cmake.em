@@ -83,6 +83,29 @@ macro(_generate_msg_idlcpp_dds ARG_PKG MSG_SHORT_NAME ARG_IFLAGS ARG_MSG_DEPS AR
   list(APPEND ALL_GEN_OUTPUT_FILES_idlcpp ${GEN_OUTPUT_FILES})
 
   genidlcpp_append_include_dirs()
+
+  # set(GEN_OUTPUT_FILES
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}.hh"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}.cc"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}TypeSupport.hh"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}TypeSupport.cc"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}DataReader.hh"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}DataReader.cc"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}DataWriter.hh"
+  #   "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks/${MSG_SHORT_NAME}DataWriter.cc"
+  # )
+
+  # set(COMMAND "coredx_ddl" "-f" "${IDL_INPUT_FILE}" "-l" "cpp" "-I" "@(CATKIN_DEVEL_PREFIX)/@(CATKIN_GLOBAL_SHARE_DESTINATION)" "-d" "${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks" "-s" "-D" "OSPL_IDL_COMPILER" "-D" "COREDX_DDL_COMPILER" "-I" "${GENIDLCPP_TEMPLATE_DIR}")
+  # string(REPLACE ";" " " COMMAND_STR "${COMMAND}")
+  # message("${COMMAND_STR}")
+
+  # file(MAKE_DIRECTORY ${ARG_GEN_OUTPUT_DIR}/dds_impl_twinoaks)
+
+  # add_custom_target(${PROJECT_NAME}__${MSG_SHORT_NAME}__twinoaks ALL
+  #   DEPENDS ${IDL_DEPS} ${IDL_INPUT_FILE}
+  #   COMMAND ${COMMAND}
+  #   COMMENT "Generating DDS C++ code for CoreDX from ${ARG_PKG}/${MSG_SHORT_NAME}_.idl"
+  #   )
 endmacro()
 
 macro(_generate_msg_idlcpp_convert ARG_PKG ARG_MSG ARG_IFLAGS ARG_MSG_DEPS ARG_GEN_OUTPUT_DIR)

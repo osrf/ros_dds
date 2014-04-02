@@ -42,6 +42,9 @@ for field in spec.parsed_fields():
       print('#ifndef OSPL_IDL_COMPILER')
       print('#include <dds_dcps.idl>')
       print('#endif')
+      print('#ifdef COREDX_DDL_COMPILER')
+      print('#include "dds.ddl"')
+      print('#endif')
       included_dcps = True
 }@
 
