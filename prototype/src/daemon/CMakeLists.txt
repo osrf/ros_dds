@@ -9,7 +9,7 @@ find_package(catkin REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-find_package(opensplice REQUIRED COMPONENTS C)
+#find_package(opensplice REQUIRED COMPONENTS C)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -87,15 +87,21 @@ catkin_package(
 ## Build ##
 ###########
 
+set(NDDSHOME "$ENV{NDDSHOME}")
+assert(NDDSHOME)
+set(ARCH "i86Linux3.xgcc4.6.3")
+add_definitions(-DRTI_UNIX -DRTI_LINUX)# -DRTI_64BIT)
+link_directories("${NDDSHOME}/lib/${ARCH}")
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${OPENSPLICE_INCLUDE_DIRS})
+include_directories(include "${NDDSHOME}/include" "${NDDSHOME}/include/ndds")  # ${OPENSPLICE_INCLUDE_DIRS}
 
 ## Declare a cpp library
 add_library(daemon
   src/daemon.c
 )
-target_link_libraries(daemon ${OPENSPLICE_LIBRARIES})
+target_link_libraries(daemon nddscppd nddscd nddscored)  # ${OPENSPLICE_LIBRARIES}
 
 ## Declare a cpp executable
 add_executable(daemon_test src/daemon_test.c)

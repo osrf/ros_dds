@@ -1,4 +1,6 @@
-#include "dds_dcps.h"
+//#include "dds_dcps.h"
+#include <ndds/ndds_c.h>
+
 #include "unistd.h"
 
 #include <stdio.h>
@@ -28,8 +30,10 @@ void _print_time()
   printf("time: %d.%03ld\n", (int)spec.tv_sec, ms);
 }
 
-DDS_DomainParticipantFactory dpf;
-DDS_DomainParticipant dp;
+#define DDS_DOMAIN_ID_DEFAULT 0
+
+DDS_DomainParticipantFactory* dpf;
+DDS_DomainParticipant* dp;
 
 int create_participant()
 {
@@ -47,7 +51,7 @@ int create_participant()
   dp = DDS_DomainParticipantFactory_create_participant(
     dpf,
     domain,
-    DDS_PARTICIPANT_QOS_DEFAULT,
+    &DDS_PARTICIPANT_QOS_DEFAULT,
     NULL,
     DDS_STATUS_MASK_NONE);
   if (!dp) {
@@ -62,28 +66,28 @@ int create_participant()
   return 0;
 }
 
-DDS_ParticipantBuiltinTopicDataDataReader *participantsDR;
-DDS_PublicationBuiltinTopicDataDataReader *publicationsDR;
-DDS_SubscriptionBuiltinTopicDataDataReader *subscriptionsDR;
-DDS_TopicBuiltinTopicDataDataReader *topicsDR;
+DDS_DataReader *participantsDR;
+DDS_DataReader *publicationsDR;
+DDS_DataReader *subscriptionsDR;
+DDS_DataReader *topicsDR;
 
 void wait_for_historical_data()
 {
-  DDS_Subscriber builtinSubscriber = DDS_DomainParticipant_get_builtin_subscriber(dp);
+  DDS_Subscriber* builtinSubscriber = DDS_DomainParticipant_get_builtin_subscriber(dp);
   printf("get_builtin_subscriber()\n");
-  participantsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, "DCPSParticipant");
+  participantsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PARTICIPANT_TOPIC_NAME);//"DCPSParticipant");
   printf("lookup_datareader DCPSParticipant\n");
-  publicationsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, "DCPSPublication");
+  publicationsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PUBLICATION_TOPIC_NAME);//"DCPSPublication");
   printf("lookup_datareader DCPSPublication\n");
-  subscriptionsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, "DCPSSubscription");
+  subscriptionsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_SUBSCRIPTION_TOPIC_NAME);//"DCPSSubscription");
   printf("lookup_datareader DCPSSubscription\n");
-  topicsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, "DCPSTopic");
+  topicsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_TOPIC_TOPIC_NAME);//"DCPSTopic");
   printf("lookup_datareader DCPSTopic\n");
 
   printf("wait_for_historical_data\n");
   _print_time();
 
-  DDS_Duration_t wait_duration;
+  struct DDS_Duration_t wait_duration;
   wait_duration.sec = 30;
   wait_duration.nanosec = 0;
   DDS_DataReader_wait_for_historical_data(participantsDR, &wait_duration);
@@ -99,16 +103,32 @@ void wait_for_historical_data()
 
 int get_topics(char* buffer, int max_size)
 {
+  struct DDS_InstanceHandleSeq seq;
+  DDS_ReturnCode_t status = DDS_DomainParticipant_get_discovered_topics(dp, &seq);
+  if (status != DDS_RETCODE_OK) {
+    printf("Reading failed. Status = %d: %s\n", status, RetCodeName[status]);
+    return 1;
+  };
+  int i = 0;
+  for (;i < seq._length; i++) {
+    DDS_InstanceHandle_t handle = seq._contiguous_buffer[i];
+    struct DDS_TopicBuiltinTopicData data;
+    DDS_DomainParticipant_get_discovered_topic_data(dp, &data, &handle);
+    printf("%d: topic_name=%s\n", i, data.name);
+  }
+  return 0;
+
+  /*
   char* p = buffer;
   int size = 0;
 
-  DDS_sequence_DDS_TopicBuiltinTopicData *data_values = DDS_sequence_DDS_TopicBuiltinTopicData__alloc();
-  DDS_SampleInfoSeq *info_seq = DDS_sequence_DDS_SampleInfo__alloc();
+  struct DDS_TopicBuiltinTopicDataSeq data_values;
+  struct DDS_SampleInfoSeq info_seq;
   while (1) {
     DDS_ReturnCode_t status =   DDS_TopicBuiltinTopicDataDataReader_read (
       topicsDR,
-      data_values,
-      info_seq,
+      &data_values,
+      &info_seq,
       DDS_LENGTH_UNLIMITED,
       DDS_ANY_SAMPLE_STATE,
       DDS_ANY_VIEW_STATE,
@@ -118,9 +138,9 @@ int get_topics(char* buffer, int max_size)
       printf("Reading failed. Status = %d: %s\n", status, RetCodeName[status]);
       return 0;
     };
-    printf("Read %d items from TopicBuiltinTopic\n", data_values->_length);
+    printf("Read %d items from TopicBuiltinTopic\n", data_values._length);
     int i = 0;
-    for (;i < data_values->_length; i++) {
+    for (;i < data_values._length; i++) {
       if (i > 0) {
         if (size == max_size) {
           printf("Too many topic names for return buffer\n");
@@ -130,8 +150,8 @@ int get_topics(char* buffer, int max_size)
         p += 1;
         size += 1;
       }
-      DDS_TopicBuiltinTopicData data = data_values->_buffer[i];
-      DDS_SampleInfo info = info_seq->_buffer[i];
+      DDS_TopicBuiltinTopicData data = data_values._contiguous_buffer[i];
+      struct DDS_SampleInfo info = info_seq._contiguous_buffer[i];
       printf("%d: topic_name=%s, type_name=%s, src_ts=%d:%d dst_ts=%d:%d\n", i, data.name, data.type_name, info.source_timestamp.sec, info.source_timestamp.nanosec, info.reception_timestamp.sec, info.reception_timestamp.nanosec);
       if (size + strlen(data.name) > max_size) {
         printf("Too many topic names for return buffer\n");
@@ -143,6 +163,7 @@ int get_topics(char* buffer, int max_size)
     }
   }
   return 0;
+  */
 }
 
 int delete_participant()
