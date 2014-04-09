@@ -62,14 +62,14 @@ int create_participant()
   DDS_DomainParticipantFactoryQos factory_qos;
 #elif USE_CONNEXT
   // Connext with struct
-  struct DDS_DomainParticipantFactoryQos factory_qos;
+  struct DDS_DomainParticipantFactoryQos factory_qos = DDS_DomainParticipantFactoryQos_INITIALIZER;
 #endif
   DDS_ReturnCode_t status = DDS_DomainParticipantFactory_get_qos(dpf, &factory_qos);
   if (status != DDS_RETCODE_OK) {
     printf("Get qos failed. Status = %d: %s\n", status, RetCodeName[status]);
     return 1;
   };
-  factory_qos.entity_factory.autoenable_created_entities = FALSE;
+  factory_qos.entity_factory.autoenable_created_entities = 0;
   status = DDS_DomainParticipantFactory_set_qos(dpf, &factory_qos);
   if (status != DDS_RETCODE_OK) {
     printf("Set qos failed. Status = %d: %s\n", status, RetCodeName[status]);
@@ -97,6 +97,12 @@ int create_participant()
   DDS_DomainId_t domain_id = DDS_DomainParticipant_get_domain_id(dp);
   printf("Domain id: %d\n", domain_id);
 
+  status = DDS_Entity_enable((DDS_Entity*)dp);
+  if (status != DDS_RETCODE_OK) {
+    printf("Enable failed. Status = %d: %s\n", status, RetCodeName[status]);
+    return 1;
+  };
+
   return 0;
 }
 
@@ -119,6 +125,36 @@ DDS_DataReader *topicsDR;
 #ifndef DDS_TOPIC_TOPIC_NAME
 #define DDS_TOPIC_TOPIC_NAME "DCPSTopic"
 #endif
+
+void wait_for_historical_data()
+{
+  DDS_Subscriber* builtinSubscriber = DDS_DomainParticipant_get_builtin_subscriber(dp);
+  printf("get_builtin_subscriber()\n");
+  participantsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PARTICIPANT_TOPIC_NAME);//"DCPSParticipant");
+  printf("lookup_datareader DCPSParticipant\n");
+  publicationsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PUBLICATION_TOPIC_NAME);//"DCPSPublication");
+  printf("lookup_datareader DCPSPublication\n");
+  subscriptionsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_SUBSCRIPTION_TOPIC_NAME);//"DCPSSubscription");
+  printf("lookup_datareader DCPSSubscription\n");
+  topicsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_TOPIC_TOPIC_NAME);//"DCPSTopic");
+  printf("lookup_datareader DCPSTopic\n");
+
+  printf("wait_for_historical_data\n");
+  _print_time();
+
+  struct DDS_Duration_t wait_duration;
+  wait_duration.sec = 30;
+  wait_duration.nanosec = 0;
+  DDS_DataReader_wait_for_historical_data(participantsDR, &wait_duration);
+  printf("wait_for_historical_data DCPSParticipant\n");
+  //DDS_DataReader_wait_for_historical_data(publicationsDR, &wait_duration);
+  //printf("wait_for_historical_data DCPSPublication\n");
+  //DDS_DataReader_wait_for_historical_data(subscriptionsDR, &wait_duration);
+  //printf("wait_for_historical_data DCPSSubscription\n");
+  //DDS_DataReader_wait_for_historical_data(topicsDR, &wait_duration);
+  //printf("wait_for_historical_data DCPSTopic\n");
+  _print_time();
+}
 
 int get_topics(char* buffer, int max_size)
 {
