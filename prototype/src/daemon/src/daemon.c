@@ -1,5 +1,10 @@
-//#include "dds_dcps.h"
+#ifdef USE_OPENSPLICE
+#include "dds_dcps.h"
+#elif USE_CONNEXT
 #include <ndds/ndds_c.h>
+#else
+#error "Unsupported DDS vendor"
+#endif
 
 #include "unistd.h"
 
@@ -30,7 +35,11 @@ void _print_time()
   printf("time: %d.%03ld\n", (int)spec.tv_sec, ms);
 }
 
+// defined in OpenSplice
+// not defined in Connext
+#ifndef DDS_DOMAIN_ID_DEFAULT
 #define DDS_DOMAIN_ID_DEFAULT 0
+#endif
 
 DDS_DomainParticipantFactory* dpf;
 DDS_DomainParticipant* dp;
@@ -51,7 +60,13 @@ int create_participant()
   dp = DDS_DomainParticipantFactory_create_participant(
     dpf,
     domain,
+#ifdef USE_OPENSPLICE
+    // OpenSplice without &
+    DDS_PARTICIPANT_QOS_DEFAULT,
+#elif USE_CONNEXT
+    // Connext with &
     &DDS_PARTICIPANT_QOS_DEFAULT,
+#endif
     NULL,
     DDS_STATUS_MASK_NONE);
   if (!dp) {
@@ -71,99 +86,87 @@ DDS_DataReader *publicationsDR;
 DDS_DataReader *subscriptionsDR;
 DDS_DataReader *topicsDR;
 
-void wait_for_historical_data()
-{
-  DDS_Subscriber* builtinSubscriber = DDS_DomainParticipant_get_builtin_subscriber(dp);
-  printf("get_builtin_subscriber()\n");
-  participantsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PARTICIPANT_TOPIC_NAME);//"DCPSParticipant");
-  printf("lookup_datareader DCPSParticipant\n");
-  publicationsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PUBLICATION_TOPIC_NAME);//"DCPSPublication");
-  printf("lookup_datareader DCPSPublication\n");
-  subscriptionsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_SUBSCRIPTION_TOPIC_NAME);//"DCPSSubscription");
-  printf("lookup_datareader DCPSSubscription\n");
-  topicsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_TOPIC_TOPIC_NAME);//"DCPSTopic");
-  printf("lookup_datareader DCPSTopic\n");
-
-  printf("wait_for_historical_data\n");
-  _print_time();
-
-  struct DDS_Duration_t wait_duration;
-  wait_duration.sec = 30;
-  wait_duration.nanosec = 0;
-  DDS_DataReader_wait_for_historical_data(participantsDR, &wait_duration);
-  printf("wait_for_historical_data DCPSParticipant\n");
-  DDS_DataReader_wait_for_historical_data(publicationsDR, &wait_duration);
-  printf("wait_for_historical_data DCPSPublication\n");
-  DDS_DataReader_wait_for_historical_data(subscriptionsDR, &wait_duration);
-  printf("wait_for_historical_data DCPSSubscription\n");
-  DDS_DataReader_wait_for_historical_data(topicsDR, &wait_duration);
-  printf("wait_for_historical_data DCPSTopic\n");
-  _print_time();
-}
+// defined in Connext
+// not defined in OpenSplice
+#ifndef DDS_PARTICIPANT_TOPIC_NAME
+#define DDS_PARTICIPANT_TOPIC_NAME "DCPSParticipant"
+#endif
+#ifndef DDS_PUBLICATION_TOPIC_NAME
+#define DDS_PUBLICATION_TOPIC_NAME "DCPSPublication"
+#endif
+#ifndef DDS_SUBSCRIPTION_TOPIC_NAME
+#define DDS_SUBSCRIPTION_TOPIC_NAME "DCPSSubscription"
+#endif
+#ifndef DDS_TOPIC_TOPIC_NAME
+#define DDS_TOPIC_TOPIC_NAME "DCPSTopic"
+#endif
 
 int get_topics(char* buffer, int max_size)
 {
-  struct DDS_InstanceHandleSeq seq;
-  DDS_ReturnCode_t status = DDS_DomainParticipant_get_discovered_topics(dp, &seq);
-  if (status != DDS_RETCODE_OK) {
-    printf("Reading failed. Status = %d: %s\n", status, RetCodeName[status]);
-    return 1;
-  };
-  int i = 0;
-  for (;i < seq._length; i++) {
-    DDS_InstanceHandle_t handle = seq._contiguous_buffer[i];
-    struct DDS_TopicBuiltinTopicData data;
-    DDS_DomainParticipant_get_discovered_topic_data(dp, &data, &handle);
-    printf("%d: topic_name=%s\n", i, data.name);
-  }
-  return 0;
-
-  /*
   char* p = buffer;
   int size = 0;
 
-  struct DDS_TopicBuiltinTopicDataSeq data_values;
-  struct DDS_SampleInfoSeq info_seq;
-  while (1) {
-    DDS_ReturnCode_t status =   DDS_TopicBuiltinTopicDataDataReader_read (
-      topicsDR,
-      &data_values,
-      &info_seq,
-      DDS_LENGTH_UNLIMITED,
-      DDS_ANY_SAMPLE_STATE,
-      DDS_ANY_VIEW_STATE,
-      DDS_ANY_INSTANCE_STATE);
+#ifdef USE_OPENSPLICE
+  // OpenSplice without struct
+  DDS_InstanceHandleSeq seq;
+#elif USE_CONNEXT
+  // Connext with struct
+  struct DDS_InstanceHandleSeq seq;
+#endif
+  DDS_ReturnCode_t status = DDS_DomainParticipant_get_discovered_topics(dp, &seq);
+  if (status != DDS_RETCODE_OK) {
+    printf("Reading failed. Status = %d: %s\n", status, RetCodeName[status]);
+    return 0;
+  };
 
-    if (status != DDS_RETCODE_OK) {
-      printf("Reading failed. Status = %d: %s\n", status, RetCodeName[status]);
-      return 0;
-    };
-    printf("Read %d items from TopicBuiltinTopic\n", data_values._length);
-    int i = 0;
-    for (;i < data_values._length; i++) {
-      if (i > 0) {
-        if (size == max_size) {
-          printf("Too many topic names for return buffer\n");
-          return 1;
-        }
-        memcpy(p, ",", 1);
-        p += 1;
-        size += 1;
-      }
-      DDS_TopicBuiltinTopicData data = data_values._contiguous_buffer[i];
-      struct DDS_SampleInfo info = info_seq._contiguous_buffer[i];
-      printf("%d: topic_name=%s, type_name=%s, src_ts=%d:%d dst_ts=%d:%d\n", i, data.name, data.type_name, info.source_timestamp.sec, info.source_timestamp.nanosec, info.reception_timestamp.sec, info.reception_timestamp.nanosec);
-      if (size + strlen(data.name) > max_size) {
+  int i = 0;
+  for (;i < seq._length; i++) {
+    if (i > 0) {
+      if (size == max_size) {
         printf("Too many topic names for return buffer\n");
         return 1;
       }
-      memcpy(p, data.name, strlen(data.name));
-      p += strlen(data.name);
-      size += strlen(data.name);
+      memcpy(p, ",", 1);
+      p += 1;
+      size += 1;
     }
+
+#ifdef USE_OPENSPLICE
+    // OpenSplice _buffer
+    DDS_InstanceHandle_t handle = seq._buffer[i];
+#elif USE_CONNEXT
+    // Connext _contiguous_buffer
+    DDS_InstanceHandle_t handle = seq._contiguous_buffer[i];
+#endif
+#ifdef USE_OPENSPLICE
+    // OpenSplice without struct
+    DDS_TopicBuiltinTopicData data;
+#elif USE_CONNEXT
+    // Connext with struct
+    struct DDS_TopicBuiltinTopicData data;
+#endif
+    DDS_DomainParticipant_get_discovered_topic_data(
+      dp,
+      &data,
+#ifdef USE_OPENSPLICE
+      // OpenSplice without &
+      handle
+#elif USE_CONNEXT
+      // Connext with &
+      &handle
+#endif
+    );
+    printf("%d: topic_name=%s\n", i, data.name);
+
+    if (size + strlen(data.name) > max_size) {
+      printf("Too many topic names for return buffer\n");
+      return 1;
+    }
+    memcpy(p, data.name, strlen(data.name));
+    p += strlen(data.name);
+    size += strlen(data.name);
   }
   return 0;
-  */
 }
 
 int delete_participant()

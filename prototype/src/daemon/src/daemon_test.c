@@ -7,7 +7,6 @@ int main (
   int rc;
   rc = create_participant();
   if (rc) exit(rc);
-  wait_for_historical_data();
   const int max_size = 1024 * 1024;
   char buffer[max_size];
   rc = get_topics(buffer, max_size);

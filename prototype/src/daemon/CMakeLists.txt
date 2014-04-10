@@ -9,8 +9,6 @@ find_package(catkin REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-#find_package(opensplice REQUIRED COMPONENTS C)
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -87,21 +85,35 @@ catkin_package(
 ## Build ##
 ###########
 
+set(OSPL_HOME "$ENV{OSPL_HOME}")
 set(NDDSHOME "$ENV{NDDSHOME}")
-assert(NDDSHOME)
-set(ARCH "i86Linux3.xgcc4.6.3")
-add_definitions(-DRTI_UNIX -DRTI_LINUX)# -DRTI_64BIT)
-link_directories("${NDDSHOME}/lib/${ARCH}")
+if(OSPL_HOME)
+  message("Using OpenSplice")
+  find_package(opensplice REQUIRED COMPONENTS C)
+  set(DDS_INCLUDE_DIRS ${OPENSPLICE_INCLUDE_DIRS})
+  set(DDS_LIBRARIES ${OPENSPLICE_LIBRARIES})
+  add_definitions("-DUSE_OPENSPLICE")
+elseif(NDDSHOME)
+  message("Using Connext")
+  set(ARCH "i86Linux3.xgcc4.6.3")
+  add_definitions(-DRTI_UNIX -DRTI_LINUX)  # -DRTI_64BIT)
+  link_directories("${NDDSHOME}/lib/${ARCH}")
+  set(DDS_INCLUDE_DIRS "${NDDSHOME}/include" "${NDDSHOME}/include/ndds")
+  set(DDS_LIBRARIES nddscppd nddscd nddscored)
+  add_definitions("-DUSE_CONNEXT")
+else()
+  message(FATAL_ERROR "Either define OSPL_HOME or NDDSHOME")
+endif()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include "${NDDSHOME}/include" "${NDDSHOME}/include/ndds")  # ${OPENSPLICE_INCLUDE_DIRS}
+include_directories(include ${DDS_INCLUDE_DIRS})
 
 ## Declare a cpp library
 add_library(daemon
   src/daemon.c
 )
-target_link_libraries(daemon nddscppd nddscd nddscored)  # ${OPENSPLICE_LIBRARIES}
+target_link_libraries(daemon ${DDS_LIBRARIES})
 
 ## Declare a cpp executable
 add_executable(daemon_test src/daemon_test.c)
