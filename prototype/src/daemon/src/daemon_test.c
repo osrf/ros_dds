@@ -7,7 +7,10 @@ int main (
   int rc;
   rc = create_participant();
   if (rc) exit(rc);
+#if USE_CONNEXT
+  // only necessary for Connext
   wait_for_historical_data();
+#endif
   const int max_size = 1024 * 1024;
   char buffer[max_size];
   rc = get_topics(buffer, max_size);

@@ -142,7 +142,13 @@ void wait_for_historical_data()
   printf("wait_for_historical_data\n");
   _print_time();
 
+#ifdef USE_OPENSPLICE
+  // OpenSplice without struct
+  DDS_Duration_t wait_duration;
+#elif USE_CONNEXT
+  // Connext with struct
   struct DDS_Duration_t wait_duration;
+#endif
   wait_duration.sec = 30;
   wait_duration.nanosec = 0;
   DDS_DataReader_wait_for_historical_data(participantsDR, &wait_duration);
