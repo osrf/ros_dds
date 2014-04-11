@@ -57,6 +57,25 @@ int create_participant()
   }
   printf("Created ParticipantFactory.\n");
 
+#ifdef USE_OPENSPLICE
+  // OpenSplice without struct
+  DDS_DomainParticipantFactoryQos factory_qos;
+#elif USE_CONNEXT
+  // Connext with struct
+  struct DDS_DomainParticipantFactoryQos factory_qos;
+#endif
+  DDS_ReturnCode_t status = DDS_DomainParticipantFactory_get_qos(dpf, &factory_qos);
+  if (status != DDS_RETCODE_OK) {
+    printf("Get qos failed. Status = %d: %s\n", status, RetCodeName[status]);
+    return 1;
+  };
+  factory_qos.entity_factory.autoenable_created_entities = FALSE;
+  status = DDS_DomainParticipantFactory_set_qos(dpf, &factory_qos);
+  if (status != DDS_RETCODE_OK) {
+    printf("Set qos failed. Status = %d: %s\n", status, RetCodeName[status]);
+    return 1;
+  };
+
   dp = DDS_DomainParticipantFactory_create_participant(
     dpf,
     domain,
