@@ -46,6 +46,8 @@ DDS_DomainParticipant* dp;
 
 int create_participant()
 {
+  _print_time();
+
   DDS_DomainId_t domain = DDS_DOMAIN_ID_DEFAULT;
 
   /* Create a DomainParticipantFactory and a DomainParticipant */
@@ -128,6 +130,8 @@ DDS_DataReader *topicsDR;
 
 void wait_for_historical_data()
 {
+  _print_time();
+
   DDS_Subscriber* builtinSubscriber = DDS_DomainParticipant_get_builtin_subscriber(dp);
   printf("get_builtin_subscriber()\n");
   participantsDR = DDS_Subscriber_lookup_datareader(builtinSubscriber, DDS_PARTICIPANT_TOPIC_NAME);//"DCPSParticipant");
@@ -140,7 +144,6 @@ void wait_for_historical_data()
   printf("lookup_datareader DCPSTopic\n");
 
   printf("wait_for_historical_data\n");
-  _print_time();
 
 #ifdef USE_OPENSPLICE
   // OpenSplice without struct
@@ -159,11 +162,12 @@ void wait_for_historical_data()
   //printf("wait_for_historical_data DCPSSubscription\n");
   //DDS_DataReader_wait_for_historical_data(topicsDR, &wait_duration);
   //printf("wait_for_historical_data DCPSTopic\n");
-  _print_time();
 }
 
 int get_topics(char* buffer, int max_size)
 {
+  _print_time();
+
   char* p = buffer;
   int size = 0;
 
@@ -232,6 +236,8 @@ int get_topics(char* buffer, int max_size)
 
 int delete_participant()
 {
+  _print_time();
+
   /* Deleting the DomainParticipant */
   DDS_ReturnCode_t status = DDS_DomainParticipantFactory_delete_participant(dpf, dp);
   if (status != DDS_RETCODE_OK) {
@@ -239,6 +245,8 @@ int delete_participant()
     return 1;
   };
   printf("Deleted Participant.\n");
+
+  _print_time();
 
   /* Everything is fine, return normally. */
   return 0;
