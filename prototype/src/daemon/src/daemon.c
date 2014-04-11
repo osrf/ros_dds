@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <time.h>
 
+#if __APPLE__
+#include <sys/time.h>
+#endif
+
 char *RetCodeName[13] = {
     "DDS_RETCODE_OK",
     "DDS_RETCODE_ERROR",
@@ -21,11 +25,21 @@ char *RetCodeName[13] = {
 
 void _print_time()
 {
+  int sec;
+  long ms;
+#if __APPLE__
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ms = tv.tv_usec / 1.0e3;
+  sec = (int)tv.tv_sec;
+#else
   struct timespec spec;
   clock_gettime(CLOCK_REALTIME, &spec);
+  ms = spec.tv_nsec / 1.0e6;
+  sec = (int)spec.tv_sec;
+#endif
 
-  long ms = spec.tv_nsec / 1.0e6;
-  printf("time: %d.%03ld\n", (int)spec.tv_sec, ms);
+  printf("time: %d.%03ld\n", sec, ms);
 }
 
 DDS_DomainParticipantFactory dpf;
