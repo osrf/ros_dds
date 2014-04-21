@@ -1,0 +1,19 @@
+@###############################################
+@#
+@# ROS message specific Publisher Implementation
+@#
+@# EmPy template for <msg>_publisher.hpp files
+@#
+@###############################################
+#ifndef @(spec.package.upper())_IMPL_@(spec.short_name.upper())_PUBLISHER__HPP
+#define @(spec.package.upper())_IMPL_@(spec.short_name.upper())_PUBLISHER__HPP
+
+/* Include the genmsg output */
+#include <@(spec.package)/@(spec.short_name).h>
+
+/* The node.hpp header for the create_pub/sub and Pub/Sub templates */
+#include <rclcpp/node/node.hpp>
+
+
+
+#endif /* @(spec.package.upper())_IMPL_@(spec.short_name.upper())_PUBLISHER__HPP */

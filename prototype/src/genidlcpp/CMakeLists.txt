@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(genidlcpp)
-find_package(catkin REQUIRED COMPONENTS genmsg)
+find_package(catkin REQUIRED COMPONENTS genmsg rclcpp rclcpp_impl_ospl)
 
 file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include)
 
 catkin_package(
-  INCLUDE_DIRS include ${CATKIN_DEVEL_PREFIX}/include
-  CATKIN_DEPENDS genmsg
+  INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include
+  CATKIN_DEPENDS genmsg rclcpp rclcpp_impl_ospl
   CFG_EXTRAS genidlcpp-extras.cmake
 )
 

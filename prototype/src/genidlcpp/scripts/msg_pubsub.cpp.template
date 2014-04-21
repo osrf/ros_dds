@@ -1,0 +1,346 @@
+#include "@(spec.short_name)_pubsub.hpp"
+#include <@(spec.package)/dds_impl/@(spec.short_name)_.h>
+#include <@(spec.package)/dds_impl/@(spec.short_name)_Dcps_impl.h>
+
+#include <rclcpp/node/impl/node_impl.hpp>
+#include <rclcpp/publisher/impl/publisher_impl.hpp>
+
+typedef @(spec.package)::@(spec.short_name) ROSMsgType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_ DDSMsgType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)__var DDSMsgType_var;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_Seq DDSMsgSeqType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_Seq_var DDSMsgSeqType_var;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_TypeSupport DDSMsgTypeSupportType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_TypeSupport_var DDSMsgTypeSupportType_var;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_DataWriter DDSMsgDataWriterType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_DataWriter_var DDSMsgDataWriterType_var;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_DataReader DDSMsgDataReaderType;
+typedef @(spec.package)::dds_impl::@(spec.short_name)_DataReader_var DDSMsgDataReaderType_var;
+
+inline void convert_ros_message_to_dds(const ROSMsgType& ros_message, DDSMsgType& dds_message)
+{
+@[for field in spec.parsed_fields()]@
+    // field.name @(field.name)
+    // field.type @(field.type)
+    // field.base_type @(field.base_type)
+    // field.is_array @(field.is_array)
+@[if field.array_len]@
+    // field.array_len @(field.array_len)
+@[else]@
+    // field.array_len dynamic
+@[end if]@
+    // field.is_header @(field.is_header)
+    // field.is_builtin @(field.is_builtin)
+@[if field.is_array]@
+    {
+@[if field.array_len]@
+        size_t size = @(field.array_len);
+@[else]@
+        size_t size = ros_message.@(field.name).size();
+        dds_message.@(field.name)_.length(size);
+@[end if]@
+        for (size_t i = 0; i < size; i++)
+        {
+@[if field.base_type in ['duration', 'time']]@
+            dds_message.@(field.name)_[i].sec = ros_message.@(field.name)[i].sec;
+            dds_message.@(field.name)_[i].nanosec = ros_message.@(field.name)[i].nsec;
+@[elif field.base_type == 'string']@
+            dds_message.@(field.name)_[i] = ros_message.@(field.name)[i].c_str();
+@[elif field.is_builtin]@
+            dds_message.@(field.name)_[i] = ros_message.@(field.name)[i];
+@[else]@
+            convert_ros_message_to_dds(ros_message.@(field.name)[i], dds_message.@(field.name)_[i]);
+@[end if]@
+        }
+    }
+@[elif field.type in ['duration', 'time']]@
+    dds_message.@(field.name)_.sec = ros_message.@(field.name).sec;
+    dds_message.@(field.name)_.nanosec = ros_message.@(field.name).nsec;
+@[elif field.type == 'string']@
+    dds_message.@(field.name)_ = ros_message.@(field.name).c_str();
+@[elif field.is_builtin]@
+    dds_message.@(field.name)_ = ros_message.@(field.name);
+@[else]@
+    convert_ros_message_to_dds(ros_message.@(field.name), dds_message.@(field.name)_);
+@[end if]@
+
+@[end for]@
+}
+
+static void convert_dds_message_to_ros(const DDSMsgType& dds_message, ROSMsgType& ros_message)
+{
+@[for field in spec.parsed_fields()]@
+    // field.name @(field.name)
+    // field.type @(field.type)
+    // field.base_type @(field.base_type)
+    // field.is_array @(field.is_array)
+@[if field.array_len]@
+    // field.array_len @(field.array_len)
+@[else]@
+    // field.array_len dynamic
+@[end if]@
+    // field.is_header @(field.is_header)
+    // field.is_builtin @(field.is_builtin)
+@[if field.is_array]@
+    {
+@[if field.array_len]@
+        size_t size = @(field.array_len);
+@[else]@
+        size_t size = dds_message.@(field.name)_.length();
+        ros_message.@(field.name).resize(size);
+@[end if]@
+        for (size_t i = 0; i < size; i++)
+        {
+@[if field.base_type in ['duration', 'time']]@
+            ros_message.@(field.name)[i].sec = dds_message.@(field.name)_[i].sec;
+            ros_message.@(field.name)[i].nsec = dds_message.@(field.name)_[i].nanosec;
+@[elif field.is_builtin]@
+            ros_message.@(field.name)[i] = dds_message.@(field.name)_[i];
+@[else]@
+            convert_dds_message_to_ros(dds_message.@(field.name)_[i], ros_message.@(field.name)[i]);
+@[end if]@
+        }
+    }
+@[elif field.type in ['duration', 'time']]@
+    ros_message.@(field.name).sec = dds_message.@(field.name)_.sec;
+    ros_message.@(field.name).nsec = dds_message.@(field.name)_.nanosec;
+@[elif field.is_builtin]@
+    ros_message.@(field.name) = dds_message.@(field.name)_;
+@[else]@
+    convert_dds_message_to_ros(dds_message.@(field.name)_, ros_message.@(field.name));
+@[end if]@
+
+@[end for]@
+}
+
+template <>
+class rclcpp::publisher::impl::SpecificPublisherImpl<ROSMsgType>
+{
+    friend class rclcpp::publisher::Publisher;
+public:
+    SpecificPublisherImpl(DDS::Publisher_var dds_publisher,
+                          DDS::Topic_var dds_topic,
+                          DDS::DataWriter_var dds_topic_datawriter)
+    : dds_publisher_(dds_publisher), dds_topic_(dds_topic),
+      dds_topic_datawriter_(dds_topic_datawriter)
+    {
+        this->data_writer_ = DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
+        checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
+    }
+    ~SpecificPublisherImpl()
+    {}
+
+    void publish(const ROSMsgType &msg)
+    {
+        DDSMsgType dds_msg;
+        convert_ros_message_to_dds(msg, dds_msg);
+        DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
+        DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
+        checkStatus(status, "DDSMsgDataWriter_t::write");
+    }
+
+private:
+    std::string topic_name_;
+    size_t queue_size_;
+
+    DDS::Publisher_var dds_publisher_;
+    DDS::Topic_var dds_topic_;
+    DDS::DataWriter_var dds_topic_datawriter_;
+
+    DDSMsgDataWriterType_var data_writer_;
+
+};
+
+template <>
+void rclcpp::publisher::impl::SpecificPublisher<ROSMsgType>::publish(const ROSMsgType &msg)
+{
+    return this->impl_->publish(msg);
+}
+
+template <>
+rclcpp::publisher::Publisher::Ptr
+rclcpp::node::impl::NodeImpl::create_publisher<ROSMsgType>(const std::string &topic_name, size_t queue_size)
+{
+    /* Create a TypeSupport object for the equivalent DDS Msg Type */
+    DDSMsgTypeSupportType dds_msg_ts;
+    char * dds_msg_name = dds_msg_ts.get_type_name();
+    DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
+    checkStatus(status, "TypeSupport::register_type");
+
+    /* Create the DDS publisher obj */
+    DDS::Publisher_var dds_publisher = this->participant_->create_publisher(
+        this->default_publisher_qos_, NULL, DDS::STATUS_MASK_NONE);
+    checkHandle(dds_publisher.in(), "DDS::DomainParticipant::create_publisher");
+
+    /* Create the DDS topic obj */
+    DDS::Topic_var dds_topic = this->participant_->create_topic(
+        topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
+        DDS::STATUS_MASK_NONE
+    );
+    checkHandle(dds_topic.in(), "DDS::DomainParticipant::create_topic");
+
+    /* Create the DDS DataWriter for the DDS Msg Type */
+    DDS::DataWriter_var dds_topic_datawriter = dds_publisher->create_datawriter(
+        dds_topic.in(), DATAWRITER_QOS_USE_TOPIC_QOS,
+        NULL, DDS::STATUS_MASK_NONE);
+    checkHandle(dds_topic_datawriter.in(), "DDS::Publisher::create_datawriter");
+
+    typedef publisher::impl::SpecificPublisher<ROSMsgType> SPub;
+    typedef publisher::impl::SpecificPublisherImpl<ROSMsgType> SPubI;
+    typedef publisher::Publisher Pub;
+    typedef publisher::Publisher::Ptr PubPtr;
+    PubPtr pub(new Pub(new SPub(topic_name, new SPubI(dds_publisher, dds_topic, dds_topic_datawriter))));
+
+    return pub;
+}
+
+template <>
+rclcpp::publisher::Publisher::Ptr
+rclcpp::node::Node::create_publisher<ROSMsgType>(const std::string &topic_name, size_t queue_size)
+{
+    /* Ensure that a publisher for this topic does not already exist */
+    if (this->publishers_.find(topic_name) != this->publishers_.end())
+    {
+        throw publisher::DuplicatePublisherException();
+    }
+
+    auto pub = this->impl_->create_publisher<ROSMsgType>(topic_name, queue_size);
+    this->publishers_.insert(std::pair<std::string, publisher::Publisher::Ptr>(topic_name, pub));
+
+    return pub;
+}
+
+template <>
+class rclcpp::subscription::impl::SpecificSubscriptionImpl<ROSMsgType>
+{
+public:
+    typedef std::function<void(ROSMsgType::ConstPtr)> CallbackType;
+    SpecificSubscriptionImpl(
+        const std::string &topic_name,
+        DDS::DataReader_var topic_reader,
+        CallbackType callback)
+    : topic_name_(topic_name), callback_(callback)
+    {
+        this->data_reader_ = DDSMsgDataReaderType::_narrow(topic_reader.in());
+        checkHandle(this->data_reader_, "DDSMsgDataReader_t::_narrow");
+        this->condition_ = this->data_reader_->get_statuscondition();
+        this->condition_->set_enabled_statuses(DDS::DATA_AVAILABLE_STATUS);
+    }
+
+    ~SpecificSubscriptionImpl() {}
+
+    bool check_status_condition(DDS::StatusCondition * other)
+    {
+        return other == this->condition_;
+    }
+
+    bool spin_some(size_t spin_limit)
+    {
+        DDS::ULong read_length;
+        if (spin_limit == 0)
+        {
+            read_length = DDS::LENGTH_UNLIMITED;
+        }
+        else
+        {
+            read_length = spin_limit;
+        }
+        DDSMsgSeqType_var dds_msg_seq = new DDSMsgSeqType();
+        DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
+        this->data_reader_->take(
+            dds_msg_seq,
+            sample_info_seq,
+            read_length,
+            DDS::ANY_SAMPLE_STATE,
+            DDS::ANY_VIEW_STATE,
+            DDS::ALIVE_INSTANCE_STATE
+        );
+
+        bool result = true;
+        if (dds_msg_seq->length() == 0)
+        {
+            result = false;
+        }
+
+        for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
+        {
+            typename ROSMsgType::Ptr ros_msg(new ROSMsgType());
+            convert_dds_message_to_ros(dds_msg_seq[i], (*ros_msg.get()));
+            try {
+                this->callback_(ros_msg);
+            } catch (const std::exception& e) {
+                std::cerr << "Error handling callback for subscription to topic '" << this->topic_name_ << "':"
+                          << std::endl << e.what() << std::endl;
+            }
+        }
+        this->data_reader_->return_loan(dds_msg_seq, sample_info_seq);
+        return result;
+    }
+
+    DDS::StatusCondition * get_status_condition()
+    {
+        return this->condition_;
+    }
+
+private:
+    DDSMsgDataReaderType_var data_reader_;
+    std::string topic_name_;
+    CallbackType callback_;
+    DDS::StatusCondition * condition_;
+
+};
+
+template <>
+bool rclcpp::subscription::impl::SpecificSubscription<ROSMsgType>::spin_some(size_t spin_limit)
+{
+    return this->impl_->spin_some(spin_limit);
+}
+
+template <>
+rclcpp::subscription::Subscription::Ptr
+rclcpp::node::impl::NodeImpl::create_subscription<ROSMsgType>(
+    const std::string &topic_name,
+    size_t queue_size,
+    std::function<void(ROSMsgType::ConstPtr)> callback
+)
+{
+    DDSMsgTypeSupportType dds_msg_ts;
+    char * dds_msg_name = dds_msg_ts.get_type_name();
+    DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
+
+    DDS::Subscriber_var dds_subscriber = this->participant_->create_subscriber(
+        this->default_subscriber_qos_, NULL, DDS::STATUS_MASK_NONE);
+
+    DDS::Topic_var dds_topic = this->participant_->create_topic(
+        topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
+        DDS::STATUS_MASK_NONE
+    );
+
+    DDS::DataReader_var topic_reader = dds_subscriber->create_datareader(
+        dds_topic.in(), DATAREADER_QOS_USE_TOPIC_QOS,
+        NULL, DDS::STATUS_MASK_NONE);
+
+    typedef subscription::impl::SpecificSubscription<ROSMsgType> SSub;
+    typedef subscription::impl::SpecificSubscriptionImpl<ROSMsgType> SSubI;
+    typedef subscription::Subscription Sub;
+    typedef subscription::Subscription::Ptr SubPtr;
+    SSubI * ssubi = new SSubI(topic_name, topic_reader, callback);
+    SubPtr sub(new Sub(topic_name, new SSub(ssubi)));
+    this->waitset_->attach_condition(ssubi->get_status_condition());
+    this->status_conditions_[sub] = ssubi->get_status_condition();
+    return sub;
+}
+
+template <>
+rclcpp::subscription::Subscription::Ptr
+rclcpp::node::Node::create_subscription<ROSMsgType>(
+    const std::string &topic_name,
+    size_t queue_size,
+    std::function<void(ROSMsgType::ConstPtr)> callback)
+{
+    auto sub = this->impl_->create_subscription<ROSMsgType>(topic_name, queue_size, callback);
+    this->subscriptions_.push_back(sub);
+    /* Reset the iterator on the subscriptions */
+    this->subscription_iterator_ = this->subscriptions_.begin();
+    return sub;
+}

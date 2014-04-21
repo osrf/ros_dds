@@ -1,17 +1,14 @@
 #ifndef RCLCPP_RCLCPP_NODE_NODE_HPP_
 #define RCLCPP_RCLCPP_NODE_NODE_HPP_
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
-#include <functional>
-#include <boost/utility.hpp>
-#include <boost/lexical_cast.hpp>
+
 #include <boost/algorithm/string.hpp>
-
-#include <ccpp_dds_dcps.h>
-
-#include <genidlcpp/resolver.h>
+#include <boost/lexical_cast.hpp>
+#include <boost/utility.hpp>
 
 #include <rclcpp/publisher/publisher.hpp>
 #include <rclcpp/subscription/subscription.hpp>
@@ -19,13 +16,13 @@
 #include <rclcpp/client/client.hpp>
 #include <rclcpp/service/service.hpp>
 
-#include <genidlcpp/resolver.h>
-
 namespace rclcpp
 {
 
-// Forward declarations for friends of the Node constructor
-std::shared_ptr<rclcpp::node::Node> create_node(const std::string &);
+namespace node {class Node;}
+
+/* Forward declarations for friends of the Node constructor */
+std::shared_ptr<node::Node> create_node(const std::string &);
 void init(int argc, char** argv);
 
 using client::Client;
@@ -33,6 +30,9 @@ using service::Service;
 
 namespace node
 {
+
+/* Forward declaration of imlpementation Node class */
+namespace impl {class NodeImpl;}
 
 /* This class represents a single, addressable node in the ROS computation graph
  *
@@ -44,38 +44,26 @@ namespace node
  */
 class Node
 {
+public:
+    typedef std::shared_ptr<Node> Ptr;
 private:
-    friend std::shared_ptr<rclcpp::node::Node> rclcpp::create_node(const std::string &name);
-    Node(std::string name);
+    friend Node::Ptr rclcpp::create_node(const std::string &name);
+    Node(const std::string &name);
 
     Node(const Node &) = delete;
 public:
-    typedef std::shared_ptr<Node> Ptr;
     ~Node();
 
     void shutdown(const std::string &reason="No reason given");
 
-    bool is_running()
-    {
-        return this->running_;
-    }
+    bool is_running();
 
-    std::string get_shutdown_reason()
-    {
-        if (this->running_)
-        {
-            return "";
-        }
-        else
-        {
-            return this->shutdown_reason_;
-        }
-    }
+    std::string get_shutdown_reason();
 
     template <typename ROSMsgType>
-    typename publisher::Publisher<ROSMsgType>::Ptr get_publisher(const std::string &topic_name, size_t queue_size)
+    publisher::Publisher::Ptr get_publisher(const std::string &topic_name, size_t queue_size)
     {
-        typedef publisher::Publisher<ROSMsgType> Pub;
+        typedef publisher::Publisher Pub;
         auto publisher = this->publishers_.find(topic_name);
         if (publisher != this->publishers_.end())
         {
@@ -87,7 +75,6 @@ public:
         }
     }
 
- 
     /* Creates and returns a Publisher based on a ROS Msg Type and a topic name
      *
      * The Publisher is templated on the ROS Msg Type, and there can only be one
@@ -98,60 +85,12 @@ public:
      * queue_size must be provided.
      */
     template <typename ROSMsgType>
-    typename publisher::Publisher<ROSMsgType>::Ptr create_publisher(const std::string &topic_name, size_t queue_size)
-    {
-        /* Ensure that a publisher for this topic does not already exist */
-        if (this->publishers_.find(topic_name) != this->publishers_.end())
-        {
-            throw publisher::DuplicatePublisherException();
-        }
-
-        /* Deduce DDS types for the given ROSMsgType using the DDSTypeResolver */
-        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-
-        /* Create a TypeSupport object for the equivalent DDS Msg Type */
-        typename r::DDSMsgTypeSupportType dds_msg_ts;
-        char * dds_msg_name = dds_msg_ts.get_type_name();
-        DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
-        checkStatus(status, "TypeSupport::register_type");
-
-        /* Create the DDS publisher obj */
-        DDS::Publisher_var dds_publisher = this->participant_->create_publisher(
-            this->default_publisher_qos_, NULL, DDS::STATUS_MASK_NONE);
-        checkHandle(dds_publisher.in(), "DDS::DomainParticipant::create_publisher");
-
-        /* Create the DDS topic obj */
-        DDS::Topic_var dds_topic = this->participant_->create_topic(
-            topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
-            DDS::STATUS_MASK_NONE
-        );
-        checkHandle(dds_topic.in(), "DDS::DomainParticipant::create_topic");
-
-        /* Create the DDS DataWriter for the DDS Msg Type */
-        DDS::DataWriter_var dds_topic_datawriter = dds_publisher->create_datawriter(
-            dds_topic.in(), DATAWRITER_QOS_USE_TOPIC_QOS,
-            NULL, DDS::STATUS_MASK_NONE);
-        checkHandle(dds_topic_datawriter.in(), "DDS::Publisher::create_datawriter");
-
-        typedef publisher::Publisher<ROSMsgType> Pub;
-        typedef publisher::PublisherInterface::Ptr PubIfacePtr;
-        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter));
-
-        this->publishers_.insert(std::pair<std::string, PubIfacePtr>(topic_name, pub));
-
-        return std::dynamic_pointer_cast<Pub>(pub);
-    }
+    publisher::Publisher::Ptr create_publisher(const std::string &topic_name, size_t queue_size);
 
     /* Destroys a publisher by reference */
-    template <typename ROSMsgType>
-    void destroy_publisher(const typename publisher::Publisher<ROSMsgType>::Ptr &publisher)
-    {
-        this->destroy_publisher(publisher->get_topic_name());
-    }
-    /* Destroys a publisher by pointer to the base class */
-    void destroy_publisher(const publisher::PublisherInterface::Ptr &publisher_interface);
+    void destroy_publisher(const rclcpp::publisher::Publisher::Ptr publisher);
     /* Destroys a publisher by topic name */
-    void destroy_publisher(std::string topic_name);
+    void destroy_publisher(const std::string &topic_name);
 
     /* Creates and returns a Subscription based on a ROS Msg Type and topic
      *
@@ -163,42 +102,11 @@ public:
      *     void callback(const ROSMsgType &msg);
      */
     template <typename ROSMsgType>
-    typename subscription::Subscription<ROSMsgType>::Ptr create_subscription(
-        std::string topic_name,
+    subscription::Subscription::Ptr create_subscription(
+        const std::string &topic_name,
         size_t queue_size,
-        typename subscription::Subscription<ROSMsgType>::CallbackType callback
-    )
-    {
-        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-
-        typename r::DDSMsgTypeSupportType dds_msg_ts;
-        char * dds_msg_name = dds_msg_ts.get_type_name();
-        DDS::ReturnCode_t status = dds_msg_ts.register_type(this->participant_.in(), dds_msg_name);
-
-        DDS::Subscriber_var dds_subscriber = this->participant_->create_subscriber(
-            this->default_subscriber_qos_, NULL, DDS::STATUS_MASK_NONE);
-
-        DDS::Topic_var dds_topic = this->participant_->create_topic(
-            topic_name.c_str(), dds_msg_name, this->default_topic_qos_, NULL,
-            DDS::STATUS_MASK_NONE
-        );
-
-        DDS::DataReader_var topic_reader = dds_subscriber->create_datareader(
-            dds_topic.in(), DATAREADER_QOS_USE_TOPIC_QOS,
-            NULL, DDS::STATUS_MASK_NONE);
-
-        typename r::DDSMsgDataReaderType_var data_reader = r::DDSMsgDataReaderType::_narrow(topic_reader.in());
-
-        typedef subscription::Subscription<ROSMsgType> Sub;
-        typedef subscription::SubscriptionInterface SubIface;
-        typename SubIface::Ptr sub(new Sub(topic_name, data_reader, callback));
-        this->subscriptions_.push_back(sub);
-        // Reset the iterator on the subscriptions
-        this->subscription_iterator_ = this->subscriptions_.begin();
-        // Hook up the read condition to the node's waitset
-        this->waitset_->attach_condition(sub->get_status_condition());
-        return std::dynamic_pointer_cast<Sub>(sub);
-    };
+        std::function<void(typename ROSMsgType::ConstPtr)> callback
+    );
 
     /* Creates and returns a Service based on a ROS Request Type, ROS Response Type,
      * a service name.
@@ -210,19 +118,21 @@ public:
      *     void callback(ROSRequestType::ConstPtr req, ROSResponseType::Ptr res);
      */
     template <typename ROSService>
-    typename Service<ROSService>::Ptr create_service(const std::string &service_name, typename Service<ROSService>::CallbackType cb)
+    typename Service<ROSService>::Ptr create_service(
+        const std::string &service_name,
+        typename rclcpp::service::Service<ROSService>::CallbackType cb)
     {
-        // XXX hardcoded queue_size
+        // TODO hardcoded queue_size
         size_t queue_size = 0;
 
         typename rclcpp::service::Service<ROSService>::Ptr service(
             new rclcpp::service::Service<ROSService>(service_name, this, cb));
-        typename rclcpp::subscription::Subscription<typename ROSService::Request>::CallbackType f(
+        std::function<void(typename ROSService::Request::ConstPtr)> f(
             std::bind(&rclcpp::service::Service<ROSService>::handle_request,
                       service, std::placeholders::_1));
 
         // Create a Subscription for the Service's request channel
-        typename rclcpp::subscription::Subscription<typename ROSService::Request>::Ptr request_subscription(
+        rclcpp::subscription::Subscription::Ptr request_subscription(
             this->create_subscription<typename ROSService::Request>(service_name + "_request", queue_size, f));
 
         return service;
@@ -236,7 +146,7 @@ public:
     template <typename ROSService>
     typename Client<ROSService>::Ptr create_client(const std::string &service_name)
     {
-        // XXX hardcoded queue_size
+        // TODO hardcoded queue_size
         size_t queue_size = 0;
 
         boost::uuids::uuid client_id_uuid = boost::uuids::random_generator()();
@@ -247,31 +157,24 @@ public:
         std::string topic_name = service_name + "_response";// + client_id;
         std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
-        typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher(
-            this->create_publisher<typename ROSService::Request>(
-                service_name + "_request", queue_size));
+        auto publisher = this->create_publisher<typename ROSService::Request>(service_name + "_request", queue_size);
 
         typename rclcpp::client::Client<ROSService>::Ptr client(
             new rclcpp::client::Client<ROSService>(client_id, publisher, this));
 
-        typename rclcpp::subscription::Subscription<typename ROSService::Response>::CallbackType f(
+        std::function<void(typename ROSService::Response::ConstPtr)> f(
             std::bind(&rclcpp::client::Client<ROSService>::handle_response,
                       client, std::placeholders::_1));
 
         // Create a Subscription for the Client's response channel
-        typename rclcpp::subscription::Subscription<typename ROSService::Response>::Ptr response_subscription(
+        rclcpp::subscription::Subscription::Ptr response_subscription(
             this->create_subscription<typename ROSService::Response>(topic_name, queue_size, f));
 
         return client;
     }
 
     /* Destroys a subscription by reference */
-    template <typename ROSMsgType>
-    void destroy_subscription(const typename subscription::Subscription<ROSMsgType>::Ptr subscription)
-    {
-        this->waitset_->detach_condition(subscription->get_status_condition());
-        this->subscriptions_.remove(subscription);
-    }
+    void destroy_subscription(const rclcpp::subscription::Subscription::Ptr subscription);
 
     /* Processes subscription callbacks, blocking until shutdown (ctrl-c) */
     void spin();
@@ -279,26 +182,20 @@ public:
     /* Process one subscription callback, if needed, and then returns */
     bool spin_once();
 private:
-    std::string name_;
-    DDS::DomainParticipantFactory_var dpf_;
-    DDS::DomainParticipant_var participant_;
-    DDS::TopicQos default_topic_qos_;
-    DDS::PublisherQos default_publisher_qos_;
-    DDS::SubscriberQos default_subscriber_qos_;
-
-    std::map<std::string, publisher::PublisherInterface::Ptr > publishers_;
-    std::list<subscription::SubscriptionInterface::Ptr> subscriptions_;
-    std::list<subscription::SubscriptionInterface::Ptr>::const_iterator subscription_iterator_;
-
-    static std::list<Node *> nodes_;
-
+    friend class impl::NodeImpl;
     friend void rclcpp::init(int argc, char** argv);
     static void static_signal_handler(int signo);
+    static std::list<Node *> nodes_;
 
+    std::string name_;
     bool running_;
     std::string shutdown_reason_;
 
-    DDS::WaitSet * waitset_;
+    std::map<std::string, publisher::Publisher::Ptr > publishers_;
+    std::list<subscription::Subscription::Ptr> subscriptions_;
+    std::list<subscription::Subscription::Ptr>::const_iterator subscription_iterator_;
+
+    impl::NodeImpl * impl_;
 };
 
 }

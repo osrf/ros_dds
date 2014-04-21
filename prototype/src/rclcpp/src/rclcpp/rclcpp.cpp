@@ -1,6 +1,7 @@
-#include <rclcpp/rclcpp.hpp>
-
 #include <functional>
+#include <signal.h>
+
+#include <rclcpp/rclcpp.hpp>
 
 using namespace rclcpp;
 
@@ -14,7 +15,7 @@ void rclcpp::init(int argc, char** argv)
     {
         throw AlreadyInitializedError();
     }
-    /* Register a signal handler so DDS doesn't just sit there... */
+
     if (signal(SIGINT, Node::static_signal_handler) == SIG_ERR)
     {
         fputs("An error occurred while setting a signal handler.\n", stderr);
