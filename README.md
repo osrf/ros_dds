@@ -51,9 +51,8 @@ Clone our fork of opensplice, then use our CMake wrapper around their oddball bu
 # (see http://www.prismtech.com/opensplice/opensplice-dds-community/building for the full list)
 sudo apt-get install gawk flex bison perl
 git clone https://github.com/osrf/opensplice.git
-mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=/tmp/opensplice
+cmake .. -DCMAKE_INSTALL_PREFIX=/tmp/opensplice
 make install
 # Tell CMake to look there for CMake configuration files
 export CMAKE_PREFIX_PATH=/tmp/opensplice:$CMAKE_PREFIX_PATH
