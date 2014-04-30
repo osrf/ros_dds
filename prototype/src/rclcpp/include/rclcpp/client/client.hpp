@@ -51,7 +51,7 @@ namespace rclcpp
             typename ROSService::Response::ConstPtr call(typename ROSService::Request &req)
             {
                 shared_future f = this->async_call(req);
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ < 7))
+#if (!__clang__ && (__GNUC__ == 4) && (__GNUC_MINOR__ < 7))
                 // NOTE The version (4.6) of GCC that ships with Ubuntu 12.04
                 // is broken, wait_for should return a std::future_status,
                 // according to the C++11 spec, not a bool as is GCC's case
