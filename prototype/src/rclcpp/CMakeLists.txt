@@ -30,7 +30,7 @@ add_service_files(
     ParameterServerDelete.srv
 )
 
-generate_messages()
+generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(
     INCLUDE_DIRS include ${OPENSPLICE_INCLUDE_DIRS}
@@ -46,5 +46,5 @@ add_dependencies(rclcpp ${catkin_EXPORTED_TARGETS} std_msgs_gencpp rclcpp_gencpp
 install(TARGETS rclcpp
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-install(DIRECTORY include/rclcpp/ 
+install(DIRECTORY include/rclcpp/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
