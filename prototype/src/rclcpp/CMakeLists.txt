@@ -48,3 +48,7 @@ install(TARGETS rclcpp
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 install(DIRECTORY include/rclcpp/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+add_executable(parameter_server src/rclcpp/parameter_server.cpp)
+target_link_libraries(parameter_server ${catkin_LIBRARIES} rclcpp)
+add_dependencies(parameter_server ${catkin_EXPORTED_TARGETS})
