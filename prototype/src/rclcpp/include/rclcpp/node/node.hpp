@@ -283,10 +283,10 @@ public:
     bool spin_once();
 
     /* Creates and returns a ParameterClient */
-    rclcpp::parameter::ParameterClient::Ptr create_parameter_client();
+    rclcpp::parameter::ParameterClient::Ptr create_parameter_client(const std::string &prefix);
 
     /* Creates and returns a ParameterServer */
-    rclcpp::parameter::ParameterServer::Ptr create_parameter_server();
+    rclcpp::parameter::ParameterServer::Ptr create_parameter_server(const std::string &prefix);
 
 private:
     std::string name_;

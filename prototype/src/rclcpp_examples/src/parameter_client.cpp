@@ -23,8 +23,13 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
+    if(argc != 2) {
+        std::cout << "Usage: " << argv[0] << " node_name" << std::endl;
+        return 1;
+    }
+
     rclcpp::Node::Ptr node = rclcpp::create_node("parameter_client");
-    auto parameter_client = node->create_parameter_client();
+    auto parameter_client = node->create_parameter_client(argv[1]);
 
     std::string request1 = "rocks";
     parameter_client->set_param("ros", request1);

@@ -43,6 +43,9 @@ Node::Node(std::string name)
 
     // Create a waitset for spin
     this->waitset_ = new DDS::WaitSet();
+
+    // Create a parameter server for this node
+    this->create_parameter_server(name);
 }
 
 Node::~Node()
@@ -151,31 +154,31 @@ void Node::destroy_publisher(std::string topic_name)
     this->publishers_.erase(topic_name);
 }
 
-rclcpp::parameter::ParameterClient::Ptr Node::create_parameter_client()
+rclcpp::parameter::ParameterClient::Ptr Node::create_parameter_client(const std::string &prefix)
 {
     auto parameter_client_get_string = this->create_client<ParameterServerGetString>(
-        "parameter_server_get_string");
+        prefix + "parameter_server_get_string");
 
     auto parameter_client_set_string = this->create_client<ParameterServerSetString>(
-        "parameter_server_set_string");
+        prefix + "parameter_server_set_string");
 
     auto parameter_client_get_int64 = this->create_client<ParameterServerGetInt64>(
-        "parameter_server_get_int64");
+        prefix + "parameter_server_get_int64");
 
     auto parameter_client_set_int64 = this->create_client<ParameterServerSetInt64>(
-        "parameter_server_set_int64");
+        prefix + "parameter_server_set_int64");
 
     auto parameter_client_get_bool = this->create_client<ParameterServerGetBool>(
-        "parameter_server_get_bool");
+        prefix + "parameter_server_get_bool");
 
     auto parameter_client_set_bool = this->create_client<ParameterServerSetBool>(
-        "parameter_server_set_bool");
+        prefix + "parameter_server_set_bool");
 
     auto parameter_client_has = this->create_client<ParameterServerHas>(
-        "parameter_server_has");
+        prefix + "parameter_server_has");
 
     auto parameter_client_delete = this->create_client<ParameterServerDelete>(
-        "parameter_server_delete");
+        prefix + "parameter_server_delete");
 
     auto parameter_client = rclcpp::parameter::ParameterClient::Ptr(
         new rclcpp::parameter::ParameterClient(
@@ -188,14 +191,14 @@ rclcpp::parameter::ParameterClient::Ptr Node::create_parameter_client()
     return parameter_client;
 }
 
-rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
+rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server(const std::string &prefix)
 {
     rclcpp::parameter::ParameterServerHandler::Ptr parameter_server_handler(
         new rclcpp::parameter::ParameterServerHandler()
     );
 
     auto parameter_server_get_string = this->create_service<rclcpp::ParameterServerGetString>(
-        "parameter_server_get_string",
+        prefix + "parameter_server_get_string",
          std::bind(
             &rclcpp::parameter::ParameterServerHandler::get_param_string,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -203,7 +206,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_set_string = this->create_service<rclcpp::ParameterServerSetString>(
-        "parameter_server_set_string",
+        prefix + "parameter_server_set_string",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::set_param_string,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -211,7 +214,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_get_int64 = this->create_service<rclcpp::ParameterServerGetInt64>(
-        "parameter_server_get_int64",
+        prefix + "parameter_server_get_int64",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::get_param_int64,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -219,7 +222,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_set_int64 = this->create_service<rclcpp::ParameterServerSetInt64>(
-        "parameter_server_set_int64",
+        prefix + "parameter_server_set_int64",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::set_param_int64,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -227,7 +230,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_get_bool = this->create_service<rclcpp::ParameterServerGetBool>(
-        "parameter_server_get_bool",
+        prefix + "parameter_server_get_bool",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::get_param_bool,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -235,7 +238,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_set_bool = this->create_service<rclcpp::ParameterServerSetBool>(
-        "parameter_server_set_bool",
+        prefix + "parameter_server_set_bool",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::set_param_bool,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -243,7 +246,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_has = this->create_service<rclcpp::ParameterServerHas>(
-        "parameter_server_has",
+        prefix + "parameter_server_has",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::has_param,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
@@ -251,7 +254,7 @@ rclcpp::parameter::ParameterServer::Ptr Node::create_parameter_server()
     );
 
     auto parameter_server_delete = this->create_service<rclcpp::ParameterServerDelete>(
-        "parameter_server_delete",
+        prefix + "parameter_server_delete",
         std::bind(
             &rclcpp::parameter::ParameterServerHandler::delete_param,
             parameter_server_handler, std::placeholders::_1, std::placeholders::_2
