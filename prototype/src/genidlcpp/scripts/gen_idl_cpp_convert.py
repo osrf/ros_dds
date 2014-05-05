@@ -12,7 +12,8 @@ import os
 import sys
 
 convert_template_map = {
-    'msg_convert.h.template': '@NAME@_convert.h'
+    'msg_pubsub.hpp.template': 'impl/@NAME@_pubsub.hpp',
+    'msg_pubsub.cpp.template': 'impl/@NAME@_pubsub.cpp',
 }
 
 # ${ARG_MSG} ${ARG_PKG} ${MSG_SHORT_NAME} -o "${ARG_GEN_OUTPUT_DIR}/dds_impl" -e ${GENIDLCPP_TEMPLATE_DIR}
@@ -40,7 +41,10 @@ if __name__ == "__main__":
     for spec in msg_specs:
         for template_file_name, output_file_name in convert_template_map.items():
             template_file = os.path.join(args.e, template_file_name)
+            output_file_name = output_file_name.replace('/', os.sep)
             output_file = os.path.join(args.o, output_file_name.replace("@NAME@", spec.short_name))
+            if not os.path.exists(os.path.dirname(output_file)):
+                os.makedirs(os.path.dirname(output_file))
             g = {
                 "spec": spec
             }
