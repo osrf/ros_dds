@@ -19,6 +19,9 @@
 #include <rclcpp/client/client.hpp>
 #include <rclcpp/service/service.hpp>
 
+#include <rclcpp/parameter/client.hpp>
+#include <rclcpp/parameter/server.hpp>
+
 #include <genidlcpp/resolver.h>
 
 namespace rclcpp
@@ -107,7 +110,7 @@ public:
         }
 
         /* Deduce DDS types for the given ROSMsgType using the DDSTypeResolver */
-        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
+        typedef ::dds_impl::DDSTypeResolver<ROSMsgType> r;
 
         /* Create a TypeSupport object for the equivalent DDS Msg Type */
         typename r::DDSMsgTypeSupportType dds_msg_ts;
@@ -169,7 +172,7 @@ public:
         typename subscription::Subscription<ROSMsgType>::CallbackType callback
     )
     {
-        typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
+        typedef ::dds_impl::DDSTypeResolver<ROSMsgType> r;
 
         typename r::DDSMsgTypeSupportType dds_msg_ts;
         char * dds_msg_name = dds_msg_ts.get_type_name();
@@ -245,7 +248,6 @@ public:
         boost::erase_all(client_id, "-");
 
         std::string topic_name = service_name + "_response";// + client_id;
-        std::cout << "Subscribed for responses to topic named: " << topic_name << std::endl;
 
         typename rclcpp::publisher::Publisher<typename ROSService::Request>::Ptr publisher(
             this->create_publisher<typename ROSService::Request>(
@@ -278,6 +280,13 @@ public:
 
     /* Process one subscription callback, if needed, and then returns */
     bool spin_once();
+
+    /* Creates and returns a ParameterClient */
+    rclcpp::parameter::ParameterClient::Ptr create_parameter_client(const std::string &prefix);
+
+    /* Creates and returns a ParameterServer */
+    rclcpp::parameter::ParameterServer::Ptr create_parameter_server(const std::string &prefix);
+
 private:
     std::string name_;
     DDS::DomainParticipantFactory_var dpf_;

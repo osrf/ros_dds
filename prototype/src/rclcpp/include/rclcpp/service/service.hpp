@@ -31,7 +31,6 @@ namespace rclcpp
                 // TODO the response topic is not client specific right now!!!
                 size_t queue_size = 0;
                 std::string topic_name = this->service_name_ + "_response";// + req->client_id;
-                std::cout << "Publishing server responses to topic named: " << topic_name << std::endl;
                 publisher_ = this->node_->template get_publisher<typename ROSService::Response>(
                     topic_name, queue_size);
             }

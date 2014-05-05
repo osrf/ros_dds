@@ -16,9 +16,21 @@ node default {
       key_source => 'http://packages.ros.org/ros.key',
     }
 
+    $ros_repo_uri = $lsbdistcodename ? {
+        'trusty' => 'http://packages.ros.org/ros-shadow-fixed/ubuntu',
+        'saucy' => 'http://packages.ros.org/ros-shadow-fixed/ubuntu',
+        default => 'http://packages.ros.org/ros/ubuntu',
+    }
+
+    $ros_distro = $lsbdistcodename ? {
+        'trusty' => 'indigo',
+        'saucy' => 'indigo',
+        default => 'hydro',
+    }
+
     apt::source { 'ros-latest':
-        location => 'http://packages.ros.org/ros/ubuntu',
-        release => 'raring',
+        location => $ros_repo_uri,
+        release => $lsbdistcodename,
         repos => 'main',
         require => Apt::Key['ros-latest'];
     }
@@ -30,7 +42,7 @@ node default {
         'build-essential': ensure => latest;
         'cmake': ensure => latest;
         'vim': ensure => latest;
-        'ros-hydro-ros-base':
+        "ros-${ros_distro}-ros-base":
              ensure => latest,
              require => Apt::Source['ros-latest'];
         'python-vcstool':
