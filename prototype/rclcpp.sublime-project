@@ -14,6 +14,7 @@
 			"-I/Users/william/hydro/install/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclc/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclcpp/include",
+			"-I${folder:${project_path:rclcpp.sublime-project}}/src/rclcpp_impl_ospl/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/src/genidlcpp/include",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/build/rclcpp/idl/cpp",
 			"-I${folder:${project_path:rclcpp.sublime-project}}/devel/include",
