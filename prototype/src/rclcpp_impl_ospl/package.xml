@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <name>rclcpp_impl_ospl</name>
+  <version>0.0.0</version>
+  <description>Opensplice specific implementation for ROS Client Library in C++</description>
+  <maintainer email="william@osrfoundation.org">William Woodall</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend version_gte="0.5.78">catkin</buildtool_depend>
+
+</package>
