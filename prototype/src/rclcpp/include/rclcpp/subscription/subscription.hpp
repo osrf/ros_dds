@@ -3,6 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <queue>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
@@ -40,8 +41,18 @@ public:
 private:
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
     friend class node::Node;
-    Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb)
-    : topic_name_(topic_name), data_reader_(data_reader), cb_(cb)
+
+    typedef boost::shared_ptr< std::queue<boost::any> > shared_queue;
+
+    typedef std::map<std::string, shared_queue> queues_map;
+
+    typedef boost::shared_ptr<queues_map> shared_queues_map;
+
+    shared_queues_map queues_;
+
+    Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb,
+                 shared_queues_map queues)
+    : topic_name_(topic_name), data_reader_(data_reader), cb_(cb), queues_(queues)
     {
         this->condition_ = this->data_reader_->get_statuscondition();
         this->condition_->set_enabled_statuses(DDS::DATA_AVAILABLE_STATUS);
@@ -49,6 +60,18 @@ private:
 
     bool spin_(DDS::ULong read_length)
     {
+        typename ROSMsgType::Ptr ros_msg;
+        auto queue_it = this->queues_->find(this->topic_name_);
+
+        if(queue_it != this->queues_->end()) {
+            shared_queue queue = queue_it->second;
+            while(!(queue->empty())) {
+                ros_msg = boost::any_cast<typename ROSMsgType::Ptr>(queue->front());
+                queue->pop();
+                this->cb_(ros_msg);
+            }
+        }
+
         typename r::DDSMsgSeqType_var dds_msg_seq = new typename r::DDSMsgSeqType();
         DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
         this->data_reader_->take(
@@ -68,7 +91,7 @@ private:
 
         for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
         {
-            typename ROSMsgType::Ptr ros_msg(new ROSMsgType());
+            ros_msg = typename ROSMsgType::Ptr(new ROSMsgType());
             dds_impl::DDSTypeResolver<ROSMsgType>::convert_dds_message_to_ros(dds_msg_seq[i], (*ros_msg.get()));
             try {
                 this->cb_(ros_msg);

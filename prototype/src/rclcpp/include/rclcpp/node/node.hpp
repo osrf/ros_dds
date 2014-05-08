@@ -1,10 +1,14 @@
 #ifndef RCLCPP_RCLCPP_NODE_NODE_HPP_
 #define RCLCPP_RCLCPP_NODE_NODE_HPP_
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
-#include <functional>
+#include <queue>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/any.hpp>
 #include <boost/utility.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -48,6 +52,14 @@ namespace node
 class Node
 {
 private:
+    typedef boost::shared_ptr< std::queue<boost::any> > shared_queue;
+
+    typedef std::map<std::string, shared_queue> queues_map;
+
+    typedef boost::shared_ptr<queues_map> shared_queues_map;
+
+    shared_queues_map queues_;
+
     friend std::shared_ptr<rclcpp::node::Node> rclcpp::create_node(const std::string &name);
     Node(std::string name);
 
@@ -138,7 +150,8 @@ public:
 
         typedef publisher::Publisher<ROSMsgType> Pub;
         typedef publisher::PublisherInterface::Ptr PubIfacePtr;
-        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter));
+        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter,
+                                this->queues_));
 
         this->publishers_.insert(std::pair<std::string, PubIfacePtr>(topic_name, pub));
 
@@ -172,6 +185,8 @@ public:
         typename subscription::Subscription<ROSMsgType>::CallbackType callback
     )
     {
+        this->queues_->insert(std::make_pair(topic_name,
+                                             shared_queue(new std::queue< boost::any >)));
         typedef ::dds_impl::DDSTypeResolver<ROSMsgType> r;
 
         typename r::DDSMsgTypeSupportType dds_msg_ts;
@@ -194,7 +209,7 @@ public:
 
         typedef subscription::Subscription<ROSMsgType> Sub;
         typedef subscription::SubscriptionInterface SubIface;
-        typename SubIface::Ptr sub(new Sub(topic_name, data_reader, callback));
+        typename SubIface::Ptr sub(new Sub(topic_name, data_reader, callback, this->queues_));
         this->subscriptions_.push_back(sub);
         // Reset the iterator on the subscriptions
         this->subscription_iterator_ = this->subscriptions_.begin();

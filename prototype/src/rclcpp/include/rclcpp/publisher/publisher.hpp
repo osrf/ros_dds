@@ -38,14 +38,25 @@ template <typename ROSMsgType>
 class Publisher : public PublisherInterface
 {
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
+
+    typedef boost::shared_ptr< std::queue<boost::any> > shared_queue;
+
+    typedef boost::shared_ptr<
+        std::map<
+            std::string,
+            shared_queue
+        >
+    > queues_map;
+
     friend class node::Node;
     Publisher(std::string topic_name, size_t queue_size,
               DDS::Publisher_var dds_publisher,
               DDS::Topic_var dds_topic,
-              DDS::DataWriter_var dds_topic_datawriter)
+              DDS::DataWriter_var dds_topic_datawriter,
+              queues_map queues)
     : topic_name_(topic_name), queue_size_(queue_size),
       dds_publisher_(dds_publisher), dds_topic_(dds_topic),
-      dds_topic_datawriter_(dds_topic_datawriter)
+      dds_topic_datawriter_(dds_topic_datawriter), queues_(queues)
     {
         this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
         checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
@@ -70,12 +81,21 @@ public:
         this->publish(*msg);
     }
 
+    void publish(typename ROSMsgType::Ptr msg)
+    {
+        auto queue = this->queues_->find(this->topic_name_);
+        if(queue != this->queues_->end()) {
+            queue->second->push(msg);
+        }
+    }
+
     std::string get_topic_name()
     {
         return this->topic_name_;
     }
 
 private:
+    queues_map queues_;
     std::string topic_name_;
     size_t queue_size_;
 

@@ -19,6 +19,10 @@ add_executable(listener src/listener.cpp)
 target_link_libraries(listener ${catkin_LIBRARIES})
 add_dependencies(listener ${catkin_EXPORTED_TARGETS})
 
+add_executable(in_process src/in_process.cpp)
+target_link_libraries(in_process ${catkin_LIBRARIES})
+add_dependencies(in_process ${catkin_EXPORTED_TARGETS})
+
 add_executable(add_two_ints_server src/add_two_ints_server.cpp)
 target_link_libraries(add_two_ints_server ${catkin_LIBRARIES} rclcpp_examples_dds_msgs)
 add_dependencies(add_two_ints_server ${catkin_EXPORTED_TARGETS} rclcpp_examples_gencpp std_msgs_gencpp)
