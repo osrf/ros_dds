@@ -3,11 +3,8 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <queue>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 
 #include <ccpp_dds_dcps.h>
 #include <dds_dcps.h>
@@ -41,18 +38,10 @@ public:
 private:
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
     friend class node::Node;
+    std::shared_ptr< std::queue<typename ROSMsgType::Ptr> > internal_queue_;
 
-    typedef boost::shared_ptr< std::queue<boost::any> > shared_queue;
-
-    typedef std::map<std::string, shared_queue> queues_map;
-
-    typedef boost::shared_ptr<queues_map> shared_queues_map;
-
-    shared_queues_map queues_;
-
-    Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb,
-                 shared_queues_map queues)
-    : topic_name_(topic_name), data_reader_(data_reader), cb_(cb), queues_(queues)
+    Subscription(const std::string &topic_name, typename r::DDSMsgDataReaderType_var data_reader, CallbackType cb)
+    : topic_name_(topic_name), data_reader_(data_reader), cb_(cb), internal_queue_(new std::queue<typename ROSMsgType::Ptr>)
     {
         this->condition_ = this->data_reader_->get_statuscondition();
         this->condition_->set_enabled_statuses(DDS::DATA_AVAILABLE_STATUS);
@@ -61,13 +50,13 @@ private:
     bool spin_(DDS::ULong read_length)
     {
         typename ROSMsgType::Ptr ros_msg;
-        auto queue_it = this->queues_->find(this->topic_name_);
 
-        if(queue_it != this->queues_->end()) {
-            shared_queue queue = queue_it->second;
-            while(!(queue->empty())) {
-                ros_msg = boost::any_cast<typename ROSMsgType::Ptr>(queue->front());
-                queue->pop();
+        {
+            std::lock_guard<std::mutex> lock(queue_mutex_);
+
+            while(!(internal_queue_->empty())) {
+                ros_msg = internal_queue_->front();
+                internal_queue_->pop();
                 this->cb_(ros_msg);
             }
         }
@@ -91,7 +80,7 @@ private:
 
         for (DDS::ULong i = 0; i < dds_msg_seq->length(); i++)
         {
-            ros_msg = typename ROSMsgType::Ptr(new ROSMsgType());
+            typename ROSMsgType::Ptr ros_msg(new ROSMsgType());
             dds_impl::DDSTypeResolver<ROSMsgType>::convert_dds_message_to_ros(dds_msg_seq[i], (*ros_msg.get()));
             try {
                 this->cb_(ros_msg);
@@ -121,11 +110,16 @@ public:
         return this->spin_(DDS::LENGTH_UNLIMITED);
     }
 
+    void consume(typename ROSMsgType::Ptr msg) {
+        this->internal_queue_->push(msg);
+    }
+
 private:
     typename r::DDSMsgDataReaderType_var data_reader_;
     CallbackType cb_;
     std::string topic_name_;
     DDS::StatusCondition * condition_;
+    std::mutex queue_mutex_;
 };
 
 }

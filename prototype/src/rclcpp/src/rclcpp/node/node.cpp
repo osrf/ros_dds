@@ -3,11 +3,6 @@
 #include <ccpp_dds_dcps.h>
 
 #include <iostream>
-#include <string>
-#include <map>
-#include <queue>
-#include <boost/shared_ptr.hpp>
-#include <boost/any.hpp>
 
 #include <signal.h>
 
@@ -15,7 +10,7 @@ using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
 Node::Node(std::string name)
-: running_(true), queues_(new std::map<std::string, boost::shared_ptr< std::queue< boost::any > > >)
+: running_(true), subscriptions_queues_(new subscriptions_map)
 {
     this->nodes_.push_back(this);
     this->subscription_iterator_ = this->subscriptions_.end();

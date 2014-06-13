@@ -1,6 +1,7 @@
 #ifndef RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
 #define RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
 #include <exception>
+#include <mutex>
 #include <string>
 
 #include <ccpp.h>
@@ -8,6 +9,7 @@
 #include <genidlcpp/resolver.h>
 
 #include <rclcpp/impl/check_status.hpp>
+#include <rclcpp/subscription/subscription.hpp>
 
 namespace rclcpp
 {
@@ -29,7 +31,7 @@ class DuplicatePublisherException : public std::exception
 class PublisherInterface
 {
 public:
-	typedef std::shared_ptr<PublisherInterface> Ptr;
+    typedef std::shared_ptr<PublisherInterface> Ptr;
     virtual std::string get_topic_name() = 0;
 
 };
@@ -38,25 +40,23 @@ template <typename ROSMsgType>
 class Publisher : public PublisherInterface
 {
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-
-    typedef boost::shared_ptr< std::queue<boost::any> > shared_queue;
-
-    typedef boost::shared_ptr<
+    typedef std::shared_ptr<
         std::map<
-            std::string,
-            shared_queue
+            std::string, std::shared_ptr<
+                std::list<subscription::SubscriptionInterface::Ptr>
+            >
         >
-    > queues_map;
+    > shared_subscriptions;
 
     friend class node::Node;
     Publisher(std::string topic_name, size_t queue_size,
               DDS::Publisher_var dds_publisher,
               DDS::Topic_var dds_topic,
               DDS::DataWriter_var dds_topic_datawriter,
-              queues_map queues)
+              shared_subscriptions subscriptions_queues)
     : topic_name_(topic_name), queue_size_(queue_size),
       dds_publisher_(dds_publisher), dds_topic_(dds_topic),
-      dds_topic_datawriter_(dds_topic_datawriter), queues_(queues)
+      dds_topic_datawriter_(dds_topic_datawriter), subscriptions_queues_(subscriptions_queues)
     {
         this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
         checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
@@ -76,17 +76,23 @@ public:
         checkStatus(status, "DDSMsgDataWriter_t::write");
     }
 
+    void publish(typename ROSMsgType::Ptr msg)
+    {
+        std::lock_guard<std::mutex> lock(queues_mutex_);
+
+        auto subscriptions_queues = this->subscriptions_queues_->find(this->topic_name_);
+        if(subscriptions_queues != this->subscriptions_queues_->end()) {
+            auto subscriptions_list = subscriptions_queues->second;
+            for(auto it = subscriptions_list->begin(); it != subscriptions_list->end(); ++it) {
+                auto subscription = std::dynamic_pointer_cast< typename subscription::Subscription<ROSMsgType> >(*it);
+                subscription->consume(msg);
+            }
+        }
+    }
+
     void publish(typename ROSMsgType::ConstPtr msg)
     {
         this->publish(*msg);
-    }
-
-    void publish(typename ROSMsgType::Ptr msg)
-    {
-        auto queue = this->queues_->find(this->topic_name_);
-        if(queue != this->queues_->end()) {
-            queue->second->push(msg);
-        }
     }
 
     std::string get_topic_name()
@@ -95,7 +101,6 @@ public:
     }
 
 private:
-    queues_map queues_;
     std::string topic_name_;
     size_t queue_size_;
 
@@ -104,6 +109,16 @@ private:
     DDS::DataWriter_var dds_topic_datawriter_;
 
     typename r::DDSMsgDataWriterType_var data_writer_;
+
+    std::shared_ptr<
+        std::map<
+            std::string, std::shared_ptr<
+                std::list<subscription::SubscriptionInterface::Ptr>
+            >
+        >
+    > subscriptions_queues_;
+
+    std::mutex queues_mutex_;
 };
 
 }
