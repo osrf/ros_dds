@@ -16,21 +16,24 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
 
-    auto node = rclcpp::create_node("in_process");
+    auto nodeA = rclcpp::create_node("in_processA");
 
-    auto publisher = node->create_publisher<std_msgs::String>("chatter", 0);
+    auto nodeB = rclcpp::create_node("in_processB");
 
-    auto subscription = node->create_subscription<std_msgs::String>("chatter", 10, callback);
+    auto publisher = nodeA->create_publisher<std_msgs::String>("chatter", 0);
+
+    auto subscription = nodeB->create_subscription<std_msgs::String>("chatter", 10, callback);
 
     std_msgs::String::Ptr msg(new std_msgs::String);
     int count = 0;
-    while(node->is_running())
+    while(nodeA->is_running() && nodeB->is_running())
     {
         std::stringstream ss;
         ss << "[" << count++ << "]: Hello World!";
         msg->data = ss.str();
         publisher->publish(msg);
-        node->spin_once();
+        nodeA->spin_once();
+        nodeB->spin_once();
         sleep(1);
     }
 }

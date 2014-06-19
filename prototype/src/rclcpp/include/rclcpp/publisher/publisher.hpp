@@ -1,7 +1,6 @@
 #ifndef RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
 #define RCLCPP_RCLCPP_PUBLISHER_PUBLISHER_HPP_
 #include <exception>
-#include <mutex>
 #include <string>
 
 #include <ccpp.h>
@@ -40,23 +39,16 @@ template <typename ROSMsgType>
 class Publisher : public PublisherInterface
 {
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
-    typedef std::shared_ptr<
-        std::map<
-            std::string, std::shared_ptr<
-                std::list<subscription::SubscriptionInterface::Ptr>
-            >
-        >
-    > shared_subscriptions;
 
     friend class node::Node;
     Publisher(std::string topic_name, size_t queue_size,
               DDS::Publisher_var dds_publisher,
               DDS::Topic_var dds_topic,
               DDS::DataWriter_var dds_topic_datawriter,
-              shared_subscriptions subscriptions_queues)
+              subscription::SubscriptionManager::Ptr subscription_manager)
     : topic_name_(topic_name), queue_size_(queue_size),
       dds_publisher_(dds_publisher), dds_topic_(dds_topic),
-      dds_topic_datawriter_(dds_topic_datawriter), subscriptions_queues_(subscriptions_queues)
+      dds_topic_datawriter_(dds_topic_datawriter), subscription_manager_(subscription_manager)
     {
         this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
         checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
@@ -78,16 +70,7 @@ public:
 
     void publish(typename ROSMsgType::Ptr msg)
     {
-        std::lock_guard<std::mutex> lock(queues_mutex_);
-
-        auto subscriptions_queues = this->subscriptions_queues_->find(this->topic_name_);
-        if(subscriptions_queues != this->subscriptions_queues_->end()) {
-            auto subscriptions_list = subscriptions_queues->second;
-            for(auto it = subscriptions_list->begin(); it != subscriptions_list->end(); ++it) {
-                auto subscription = std::dynamic_pointer_cast< typename subscription::Subscription<ROSMsgType> >(*it);
-                subscription->consume(msg);
-            }
-        }
+        this->subscription_manager_->template consume<ROSMsgType>(this->topic_name_, msg);
     }
 
     void publish(typename ROSMsgType::ConstPtr msg)
@@ -110,15 +93,7 @@ private:
 
     typename r::DDSMsgDataWriterType_var data_writer_;
 
-    std::shared_ptr<
-        std::map<
-            std::string, std::shared_ptr<
-                std::list<subscription::SubscriptionInterface::Ptr>
-            >
-        >
-    > subscriptions_queues_;
-
-    std::mutex queues_mutex_;
+    subscription::SubscriptionManager::Ptr subscription_manager_;
 };
 
 }

@@ -5,7 +5,6 @@
 #include <list>
 #include <map>
 #include <memory>
-#include <mutex>
 
 #include <boost/utility.hpp>
 #include <boost/lexical_cast.hpp>
@@ -51,7 +50,7 @@ class Node
 {
 private:
     friend std::shared_ptr<rclcpp::node::Node> rclcpp::create_node(const std::string &name);
-    Node(std::string name);
+    Node(std::string name, subscription::SubscriptionManager::Ptr);
 
     Node(const Node &) = delete;
 public:
@@ -140,7 +139,7 @@ public:
 
         typedef publisher::Publisher<ROSMsgType> Pub;
         typedef publisher::PublisherInterface::Ptr PubIfacePtr;
-        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter, this->subscriptions_queues_));
+        PubIfacePtr pub(new Pub(topic_name, queue_size, dds_publisher, dds_topic, dds_topic_datawriter, this->subscription_manager_));
 
         this->publishers_.insert(std::pair<std::string, PubIfacePtr>(topic_name, pub));
 
@@ -174,19 +173,6 @@ public:
         typename subscription::Subscription<ROSMsgType>::CallbackType callback
     )
     {
-        {
-            std::lock_guard<std::mutex> lock(queues_mutex_);
-
-            auto subscription_queues = this->subscriptions_queues_->find(topic_name);
-            if(subscription_queues == this->subscriptions_queues_->end()) {
-                this->subscriptions_queues_->insert(std::make_pair(
-                    topic_name,
-                    std::shared_ptr< std::list<rclcpp::subscription::SubscriptionInterface::Ptr> >(
-                        new std::list<rclcpp::subscription::SubscriptionInterface::Ptr>()
-                    )));
-            }
-        }
-
         typedef ::dds_impl::DDSTypeResolver<ROSMsgType> r;
 
         typename r::DDSMsgTypeSupportType dds_msg_ts;
@@ -216,12 +202,13 @@ public:
         // Hook up the read condition to the node's waitset
         this->waitset_->attach_condition(sub->get_status_condition());
 
-        {
-            std::lock_guard<std::mutex> lock(queues_mutex_);
-            this->subscriptions_queues_->find(topic_name)->second->push_back(sub);
-        }
+        this->subscription_manager_->add(sub);
 
         return std::dynamic_pointer_cast<Sub>(sub);
+    };
+
+    std::list<subscription::SubscriptionInterface::Ptr> get_subscriptions() const {
+        return this->subscriptions_;
     };
 
     /* Creates and returns a Service based on a ROS Request Type, ROS Response Type,
@@ -294,6 +281,7 @@ public:
     {
         this->waitset_->detach_condition(subscription->get_status_condition());
         this->subscriptions_.remove(subscription);
+        this->subscription_manager_->remove(subscription);
     }
 
     /* Processes subscription callbacks, blocking until shutdown (ctrl-c) */
@@ -320,16 +308,6 @@ private:
     std::list<subscription::SubscriptionInterface::Ptr> subscriptions_;
     std::list<subscription::SubscriptionInterface::Ptr>::const_iterator subscription_iterator_;
 
-    typedef std::map<
-            std::string, std::shared_ptr<
-                std::list<subscription::SubscriptionInterface::Ptr>
-            >
-    > subscriptions_map;
-
-    typedef std::shared_ptr<subscriptions_map> shared_subscriptions;
-
-    shared_subscriptions subscriptions_queues_;
-
     static std::list<Node *> nodes_;
 
     friend void rclcpp::init(int argc, char** argv);
@@ -340,7 +318,7 @@ private:
 
     DDS::WaitSet * waitset_;
 
-    std::mutex queues_mutex_;
+    subscription::SubscriptionManager::Ptr subscription_manager_;
 };
 
 }

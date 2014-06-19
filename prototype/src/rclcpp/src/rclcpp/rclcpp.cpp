@@ -1,10 +1,12 @@
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/subscription/subscription.hpp>
 
 #include <functional>
 
 using namespace rclcpp;
 
 std::list<Node *> Node::nodes_;
+subscription::SubscriptionManager::Ptr subscription_manager(new subscription::SubscriptionManager());
 
 static bool globally_initialized = false;
 
@@ -24,5 +26,5 @@ void rclcpp::init(int argc, char** argv)
 
 Node::Ptr rclcpp::create_node(const std::string &name)
 {
-    return Node::Ptr(new Node(name));
+    return Node::Ptr(new Node(name, subscription_manager));
 }
