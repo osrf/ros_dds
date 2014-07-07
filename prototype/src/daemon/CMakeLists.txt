@@ -87,6 +87,7 @@ catkin_package(
 
 set(OSPL_HOME "$ENV{OSPL_HOME}")
 set(NDDSHOME "$ENV{NDDSHOME}")
+set(QEOHOME "$ENV{QEOHOME}")
 if(OSPL_HOME)
   message("Using OpenSplice")
   find_package(opensplice REQUIRED COMPONENTS C)
@@ -101,8 +102,14 @@ elseif(NDDSHOME)
   set(DDS_INCLUDE_DIRS "${NDDSHOME}/include" "${NDDSHOME}/include/ndds")
   set(DDS_LIBRARIES nddscppd nddscd nddscored)
   add_definitions("-DUSE_CONNEXT")
+elseif(QEOHOME)
+  message("Using Qeo")
+  link_directories("${QEOHOME}/lib")
+  set(DDS_INCLUDE_DIRS "${QEOHOME}/include")
+  set(DDS_LIBRARIES dds)
+  add_definitions("-DUSE_QEO")
 else()
-  message(FATAL_ERROR "Either define OSPL_HOME or NDDSHOME")
+  message(FATAL_ERROR "Either define OSPL_HOME, NDDSHOME or QEOHOME")
 endif()
 
 ## Specify additional locations of header files
