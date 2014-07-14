@@ -101,3 +101,12 @@ mytopic: mystring
 * The publisher publishes a finite number of messages at a fixed frequency, then stops.
 * The subscriber can only subscribe to one topic and it takes several seconds to shut down on Ctrl-C because OpenSplice's internal tear-down handlers are running.
 * Before running an OpenSplice program, you need to source the generated `cpp/build/setup.sh` file (if you don't, you'll get an error like `Error in DDS::DomainParticipantFactory::create_participant: Creation failed: invalid handle`).  The `setup.sh` is simple, in that it just sets the `OSPL_URI` environment variable to point to the default XML configuration file.  But we need to think about to handle configuration in general.
+
+### Releasing a new Ubuntu package
+
+To release a new version of the libopensplice63 debian:
+
+* Clone the [opensplice-release](https://bitbucket.org/osrf/opensplice-release) repo.  Update `opensplice-release/*/debian/changelog` to list the new version.
+* Clone the [opensplice](https://github.com/osrf/opensplice) repo.  In there, `git submodule init; git submodule update` to pull in the submodule content that's required.
+* Clone the [release-tools](https://bitbucket.org/osrf/release-tools) repo.
+* In the `opensplice` directory, run: `../release-tools/release.py -r <releasenumber> -a libopensplice63 opensplice <major.minor.patch> <buildpassword>
