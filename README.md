@@ -104,9 +104,9 @@ mytopic: mystring
 
 ### Releasing a new Ubuntu package
 
-To release a new version of the libopensplice63 debian:
+To release a new version of the libopensplice63 debian (rough sketch; we should really use bloom for this step):
 
 * Clone the [opensplice-release](https://bitbucket.org/osrf/opensplice-release) repo.  Update `opensplice-release/*/debian/changelog` to list the new version.
 * Clone the [opensplice](https://github.com/osrf/opensplice) repo.  In there, `git submodule init; git submodule update` to pull in the submodule content that's required.
 * Clone the [release-tools](https://bitbucket.org/osrf/release-tools) repo.
-* In the `opensplice` directory, run: `../release-tools/release.py -r <releasenumber> -a libopensplice63 opensplice <major.minor.patch> <buildpassword>
+* In the `opensplice` directory, run: `../release-tools/release.py -r <releasenumber> -a libopensplice63 opensplice <major.minor.patch> <buildpassword>`
