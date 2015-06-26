@@ -117,28 +117,36 @@ void *publisher_thread(void *unused)
     checkHandle(data_writer.in(), "LargeMsg::LargeMessageDataWriter::_narrow");
 
     /* Send some large messages */
-    std::cout << "Sending LargeMessage's" << std::endl;
-    LargeMsg::LargeMessage * msg;
-		msg = new LargeMsg::LargeMessage();
-		msg->content = std::string(pow(2, 20), '.').c_str();  // ~8.39 million characters
 		struct timespec t;
 		t.tv_sec = 0;
-		t.tv_nsec = 1000000;
-		for (int i = 0; i < 290; ++i)
-		{
-				checkHandle(msg, "new LargeMsg::LargeMessage");
+		t.tv_nsec = 10000000;
+	
+    LargeMsg::LargeMessage msg_buffer[8];
+    //msg = new LargeMsg::LargeMessage();
+    for (int i = 0; i < 6; i++)
+    {
+      int scale = 2*i+16;
+      // is this line dynamically allocating memory for me? Possibly
+      msg_buffer[i].content = std::string(pow(2, scale), '.').c_str();  // ~8.39 million characters
+    }
+    LargeMsg::LargeMessage msg;
+    std::cout << "Sending LargeMessage's" << std::endl;
 
-				msg->seq = i;
+    for (int j = 0; j < 8; ++j)
+    {
+      for (int i = 0; i < 100; ++i)
+      {
+          checkHandle(&msg, "new LargeMsg::LargeMessage");
 
-				DDS::InstanceHandle_t instance_handle = data_writer->register_instance(*msg);
+          msg.seq = i;
+          msg.content = msg_buffer[j].content;
 
-				status = data_writer->write(*msg, instance_handle);
-				checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
+          DDS::InstanceHandle_t instance_handle = data_writer->register_instance(msg);
+					checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 
-				clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
-
+					clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
+			}
 		}
-		delete msg;
 
     std::cout << "Finished" << std::endl;
 
@@ -146,6 +154,11 @@ void *publisher_thread(void *unused)
 
     /* Shutdown */
     {
+				for (int i = 0; i < 8; ++i)
+				{
+					DDS::string_free(msg_buffer[i].content);
+				}
+
         status = publisher->delete_datawriter(data_writer.in());
         checkStatus(status, "DDS::Publisher::delete_datawriter(data_writer)");
 
@@ -249,7 +262,7 @@ void *subscriber_thread(void *unused)
 
 		struct timespec t;
 		t.tv_sec = 0;
-		t.tv_nsec = 1000000;
+		t.tv_nsec = 10000000;
     std::cout << "Polling DataReader..." << std::endl;
     while (running)
     {
@@ -266,7 +279,7 @@ void *subscriber_thread(void *unused)
         for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
         {
             LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
-            std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
+            //std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
         }
 
         status = data_reader->return_loan(large_msg_seq, sample_info_seq);

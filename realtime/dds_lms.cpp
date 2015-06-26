@@ -94,6 +94,10 @@ int main(int argc, char *argv[])
     LargeMsg::LargeMessageSeq_var large_msg_seq = new LargeMsg::LargeMessageSeq();
     DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
 
+		struct timespec t;
+		t.tv_sec = 0;
+		t.tv_nsec = 10000000;
+
     std::cout << "Polling DataReader..." << std::endl;
     while (running)
     {
@@ -110,7 +114,7 @@ int main(int argc, char *argv[])
         for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
         {
             LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
-            std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
+            //std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
         }
 
         status = data_reader->return_loan(large_msg_seq, sample_info_seq);
@@ -120,7 +124,7 @@ int main(int argc, char *argv[])
 #if defined _WIN32
         Sleep(100);
 #else
-        usleep(100000);
+				clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
 #endif
       }
 

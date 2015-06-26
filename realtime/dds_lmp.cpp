@@ -1,3 +1,5 @@
+#include <string>
+
 #include "ccpp_dds_dcps.h"
 #include "check_status.h"
 
@@ -73,25 +75,38 @@ int main(int argc, char *argv[])
     checkHandle(data_writer.in(), "LargeMsg::LargeMessageDataWriter::_narrow");
 
     /* Send some large messages */
-    std::cout << "Sending LargeMessage's" << std::endl;
-    LargeMsg::LargeMessage * msg;
-		msg = new LargeMsg::LargeMessage();
-		msg->content = std::string(pow(2, 20), '.').c_str();  // ~8.39 million characters
-		for (int i = 0; i < 290; ++i)
+		struct timespec t;
+		t.tv_sec = 0;
+		t.tv_nsec = 10000000;
+
+    LargeMsg::LargeMessage msg_buffer[8];
+		//msg = new LargeMsg::LargeMessage();
+		for (int i = 0; i < 6; i++)
 		{
-				checkHandle(msg, "new LargeMsg::LargeMessage");
-
-				msg->seq = i;
-
-				DDS::InstanceHandle_t instance_handle = data_writer->register_instance(*msg);
-
-				status = data_writer->write(*msg, instance_handle);
-				checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
-
-				usleep(100000);
-
+			int scale = 2*i+16;
+			// is this line dynamically allocating memory for me? Possibly
+		  msg_buffer[i].content = std::string(pow(2, scale), '.').c_str();  // ~8.39 million characters
 		}
-		delete msg;
+		LargeMsg::LargeMessage msg;
+    std::cout << "Sending LargeMessage's" << std::endl;
+
+		for (int j = 0; j < 8; ++j)
+		{
+			for (int i = 0; i < 100; ++i)
+			{
+					checkHandle(&msg, "new LargeMsg::LargeMessage");
+
+					msg.seq = i;
+					msg.content = msg_buffer[j].content;
+
+					DDS::InstanceHandle_t instance_handle = data_writer->register_instance(msg);
+
+					status = data_writer->write(msg, instance_handle);
+					checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
+
+				  clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
+			}
+		}
 
     std::cout << "Finished" << std::endl;
 
@@ -99,6 +114,11 @@ int main(int argc, char *argv[])
 
     /* Shutdown */
     {
+				for (int i = 0; i < 8; ++i)
+				{
+					DDS::string_free(msg_buffer[i].content);
+				}
+
         status = publisher->delete_datawriter(data_writer.in());
         checkStatus(status, "DDS::Publisher::delete_datawriter(data_writer)");
 
