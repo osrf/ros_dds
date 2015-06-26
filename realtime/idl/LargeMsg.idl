@@ -1,0 +1,7 @@
+module LargeMsg {
+    struct LargeMessage {
+        long      seq;             // Message sequence number
+        string    content;         // message body
+    };
+#pragma keylist LargeMessage seq
+};
