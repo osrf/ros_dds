@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <pthread.h>
+#include <memory>
 
 #include "ccpp_dds_dcps.h"
 #include "check_status.h"
@@ -47,7 +48,7 @@ static void start_rt_thread(void *(*f)(void*))
 
 void *publisher_thread(void *unused)
 {
-		setprio(80, SCHED_RR);
+		//setprio(80, SCHED_RR);
     DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
     const char * partition_name = "Default";
     const char * topic_name = "big_chatter";
@@ -121,27 +122,29 @@ void *publisher_thread(void *unused)
 		t.tv_sec = 0;
 		t.tv_nsec = 10000000;
 	
-    LargeMsg::LargeMessage msg_buffer[8];
-    //msg = new LargeMsg::LargeMessage();
-    for (int i = 0; i < 6; i++)
+		const int buffer_size = 6;
+    std::shared_ptr<LargeMsg::LargeMessage> msg_buffer[buffer_size];
+		//LargeMsg::LargeMessage msg_buffer[buffer_size];
+
+    for (int i = 0; i < buffer_size; i++)
     {
       int scale = 2*i+16;
       // is this line dynamically allocating memory for me? Possibly
-      msg_buffer[i].content = std::string(pow(2, scale), '.').c_str();  // ~8.39 million characters
+			LargeMsg::LargeMessage msg;
+			msg.content = std::string(pow(2, scale), '.').c_str();  // ~8.39 million characters
+      msg_buffer[i] = std::make_shared<LargeMsg::LargeMessage>(msg);
     }
-    LargeMsg::LargeMessage msg;
     std::cout << "Sending LargeMessage's" << std::endl;
 
-    for (int j = 0; j < 8; ++j)
+    for (int j = 0; j < buffer_size; ++j)
     {
       for (int i = 0; i < 100; ++i)
       {
-          checkHandle(&msg, "new LargeMsg::LargeMessage");
+          checkHandle(msg_buffer[j].get(), "new LargeMsg::LargeMessage");
 
-          msg.seq = i;
-          msg.content = msg_buffer[j].content;
+          msg_buffer[j]->seq = i;
 
-          DDS::InstanceHandle_t instance_handle = data_writer->register_instance(msg);
+          DDS::InstanceHandle_t instance_handle = data_writer->register_instance(*msg_buffer[j]);
 					checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 
 					clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
@@ -156,7 +159,7 @@ void *publisher_thread(void *unused)
     {
 				for (int i = 0; i < 8; ++i)
 				{
-					DDS::string_free(msg_buffer[i].content);
+					DDS::string_free(msg_buffer[i]->content);
 				}
 
         status = publisher->delete_datawriter(data_writer.in());
@@ -178,7 +181,7 @@ void *publisher_thread(void *unused)
 
 void *subscriber_thread(void *unused)
 {
-		setprio(80, SCHED_RR);
+		//setprio(80, SCHED_RR);
     /* Register a signal handler so DDS doesn't just sit there... */
     if (signal(SIGINT, catch_function) == SIG_ERR)
     {
@@ -276,11 +279,13 @@ void *subscriber_thread(void *unused)
         );
         checkStatus(status, "LargeMsg::LargeMessageDataReader::take");
 
+				/*
         for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
         {
             LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
-            //std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
+            std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
         }
+				*/
 
         status = data_reader->return_loan(large_msg_seq, sample_info_seq);
         checkStatus(status, "LargeMsg::LargeMessageDataReader::return_loan");
@@ -313,21 +318,7 @@ int main(int argc, char *argv[])
 {
   struct timespec t;
 
-	setprio(80, SCHED_RR);
-
   start_rt_thread(&subscriber_thread);
-  start_rt_thread(&publisher_thread);
 
-  // Set priority for the main thread (monitor)
-  setprio(60, SCHED_RR);
-
-  t.tv_sec = 0;
-  t.tv_nsec = 500000;
-
-  // Main thread polls at a regular interval
-  while (1)
-  {
-    // Sleep for 500 ms
-    clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
-  }
+	publisher_thread(NULL);
 }

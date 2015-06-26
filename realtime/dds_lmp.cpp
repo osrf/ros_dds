@@ -79,9 +79,10 @@ int main(int argc, char *argv[])
 		t.tv_sec = 0;
 		t.tv_nsec = 10000000;
 
-    LargeMsg::LargeMessage msg_buffer[8];
+		const int buffer_size = 6;
+    LargeMsg::LargeMessage msg_buffer[buffer_size];
 		//msg = new LargeMsg::LargeMessage();
-		for (int i = 0; i < 6; i++)
+		for (int i = 0; i < buffer_size; i++)
 		{
 			int scale = 2*i+16;
 			// is this line dynamically allocating memory for me? Possibly
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
 		LargeMsg::LargeMessage msg;
     std::cout << "Sending LargeMessage's" << std::endl;
 
-		for (int j = 0; j < 8; ++j)
+		for (int j = 0; j < buffer_size; ++j)
 		{
 			for (int i = 0; i < 100; ++i)
 			{

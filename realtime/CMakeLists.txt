@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
-project(large_message_cpp)
+project(realtime)
+set (CMAKE_CXX_FLAGS "-std=c++11")
 
 find_package(opensplice REQUIRED)
 include_directories(${OPENSPLICE_INCLUDE_DIRS})
