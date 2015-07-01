@@ -2,26 +2,13 @@
 #include <pthread.h>
 #include <memory>
 
-#include "ccpp_dds_dcps.h"
-#include "check_status.h"
 
-#include "ccpp_LargeMsg.h"
+#include <rttest/rttest.h>
+#include "ExampleSubscriber.hpp"
+#include "ExamplePublisher.hpp"
 
-bool running = true;
-
-static void catch_function(int signo) {
-    running = false;
-    std::cout << "Catching Ctrl-C, shutting down..." << std::endl;
-}
-
-static void setprio(int prio, int sched)
-{
-  struct sched_param param;
-  // Set realtime priority for this thread
-  param.sched_priority = prio;
-  if (sched_setscheduler(0, sched, &param) < 0)
-    perror("sched_setscheduler");
-}
+ExamplePublisher pub;
+ExampleSubscriber sub;
 
 static void start_rt_thread(void *(*f)(void*))
 {
@@ -36,6 +23,7 @@ static void start_rt_thread(void *(*f)(void*))
   }
 
   /* Set the requested stacksize for this thread */
+	// put this in rttest
   /*if (pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + MAX_SAFE_STACK))
   {
     fprintf(stderr, "Couldn't set requested stack size for pthread");
@@ -46,279 +34,46 @@ static void start_rt_thread(void *(*f)(void*))
   pthread_create(&thread, &attr, f, NULL);
 }
 
+void* pub_callback(void * unused)
+{
+	pub.callback();
+}
+
+void* sub_callback(void * unused)
+{
+	sub.callback();
+}
+
 void *publisher_thread(void *unused)
 {
-		//setprio(80, SCHED_RR);
-    DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
-    const char * partition_name = "Default";
-    const char * topic_name = "big_chatter";
+	pub.init();
 
-    /* Create Domain Participant Factory */
-    DDS::DomainParticipantFactory_var dpf = DDS::DomainParticipantFactory::get_instance();
-    checkHandle(dpf.in(), "DDS::DomainParticipantFactory::get_instance");
+	rttest_spin(pub_callback, NULL);
 
-    /* Create Domain Participant */
-		std::cout << "Creating domain participant in publisher" << std::endl;
-    DDS::DomainParticipant_var participant = dpf->create_participant(
-        domain,
-        PARTICIPANT_QOS_DEFAULT,
-        NULL,
-        DDS::STATUS_MASK_NONE
-    );
-    checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
-
-    DDS::ReturnCode_t status;
-
-    /* Create a default QoS for Topics */
-    DDS::TopicQos default_topic_qos;
-    status = participant->get_default_topic_qos(default_topic_qos);
-    checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
-    // default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-    default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
-
-    /* Register the LargeMessage Type */
-    LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
-    checkHandle(large_message_ts.in(), "new LargeMessageTypeSupport");
-    char * large_message_type_name = large_message_ts->get_type_name();
-    status = large_message_ts->register_type(participant.in(), large_message_type_name);
-    checkStatus(status, "LargeMsg::LargeMessageTypeSupport::register_type");
-
-    /* Setup the Publisher's QoS */
-    DDS::PublisherQos pub_qos;
-    status = participant->get_default_publisher_qos(pub_qos);
-    checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
-    pub_qos.partition.name.length(1);
-    pub_qos.partition.name[0] = partition_name;
-
-    /* Create the publisher */
-    DDS::Publisher_var publisher = participant->create_publisher(pub_qos, NULL, DDS::STATUS_MASK_NONE);
-    checkHandle(publisher.in(), "DDS::DomainParticipant::create_publisher");
-
-    /* Create the Topic */
-    DDS::Topic_var large_message_topic = participant->create_topic(
-        topic_name,
-        large_message_type_name,
-        default_topic_qos,
-        NULL,
-        DDS::STATUS_MASK_NONE
-    );
-    checkHandle(large_message_topic.in(), "DDS::DomainParticipant::create_topic(LargeMessage)");
-
-    /* Create Topic DataWriter */
-    DDS::DataWriter_var topic_writer = publisher->create_datawriter(
-          large_message_topic.in(),
-          DATAWRITER_QOS_USE_TOPIC_QOS,
-          NULL,
-          DDS::STATUS_MASK_NONE
-    );
-    checkHandle(topic_writer.in(), "DDS::Publisher::create_datawriter(LargeMessage)");
-
-    /* Narrow the Topic DataWriter to be only for LargeMessage */
-    LargeMsg::LargeMessageDataWriter_var data_writer = LargeMsg::LargeMessageDataWriter::_narrow(topic_writer.in());
-    checkHandle(data_writer.in(), "LargeMsg::LargeMessageDataWriter::_narrow");
-
-    /* Send some large messages */
-		struct timespec t;
-		t.tv_sec = 0;
-		t.tv_nsec = 10000000;
-	
-		const int buffer_size = 6;
-    std::shared_ptr<LargeMsg::LargeMessage> msg_buffer[buffer_size];
-		//LargeMsg::LargeMessage msg_buffer[buffer_size];
-
-    for (int i = 0; i < buffer_size; i++)
-    {
-      int scale = 2*i+16;
-      // is this line dynamically allocating memory for me? Possibly
-			LargeMsg::LargeMessage msg;
-			msg.content = std::string(pow(2, scale), '.').c_str();  // ~8.39 million characters
-      msg_buffer[i] = std::make_shared<LargeMsg::LargeMessage>(msg);
-    }
-    std::cout << "Sending LargeMessage's" << std::endl;
-
-    for (int j = 0; j < buffer_size; ++j)
-    {
-      for (int i = 0; i < 100; ++i)
-      {
-          checkHandle(msg_buffer[j].get(), "new LargeMsg::LargeMessage");
-
-          msg_buffer[j]->seq = i;
-
-          DDS::InstanceHandle_t instance_handle = data_writer->register_instance(*msg_buffer[j]);
-					checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
-
-					clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
-			}
-		}
-
-    std::cout << "Finished" << std::endl;
-
-    getchar();
-
-    /* Shutdown */
-    {
-				for (int i = 0; i < 8; ++i)
-				{
-					DDS::string_free(msg_buffer[i]->content);
-				}
-
-        status = publisher->delete_datawriter(data_writer.in());
-        checkStatus(status, "DDS::Publisher::delete_datawriter(data_writer)");
-
-        status = participant->delete_publisher(publisher.in());
-        checkStatus(status, "DDS::DomainParticipant::delete_publisher");
-
-        status = participant->delete_topic(large_message_topic.in());
-        checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
-
-        DDS::string_free(large_message_type_name);
-
-        status = dpf->delete_participant(participant.in());
-        checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
-    }
-		return NULL;
+	rttest_write_results();
+	pub.teardown();
 }
 
 void *subscriber_thread(void *unused)
 {
-		//setprio(80, SCHED_RR);
-    /* Register a signal handler so DDS doesn't just sit there... */
-    if (signal(SIGINT, catch_function) == SIG_ERR)
-    {
-        fputs("An error occurred while setting a signal handler.\n", stderr);
-				return NULL;
-    }
-    DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
-    const char * partition_name = "Default";
-    const char * topic_name = "big_chatter";
+	sub.init();
 
-    /* Create Domain Participant Factory */
-    DDS::DomainParticipantFactory_var dpf = DDS::DomainParticipantFactory::get_instance();
-    checkHandle(dpf.in(), "DDS::DomainParticipantFactory::get_instance");
+	rttest_init_new_thread();
+	rttest_set_sched_priority(90, SCHED_RR);
 
-    /* Create Domain Participant */
-		std::cout << "Creating domain participant in subscriber" << std::endl;
-    DDS::DomainParticipant_var participant = dpf->create_participant(
-        domain,
-        PARTICIPANT_QOS_DEFAULT,
-        NULL,
-        DDS::STATUS_MASK_NONE
-    );
-    checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
+	rttest_spin(sub_callback, NULL);
 
-    DDS::ReturnCode_t status;
+	rttest_write_results_file("rttest_subscriber_results");
+	rttest_finish();
 
-    /* Create a default QoS for Topics */
-    DDS::TopicQos default_topic_qos;
-    status = participant->get_default_topic_qos(default_topic_qos);
-    checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
-    // default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-    default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
-
-    /* Register the LargeMessage Type */
-    LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
-    checkHandle(large_message_ts.in(), "new LargeMessageTypeSupport");
-    char * large_message_type_name = large_message_ts->get_type_name();
-    status = large_message_ts->register_type(participant.in(), large_message_type_name);
-    checkStatus(status, "LargeMsg::LargeMessageTypeSupport::register_type");
-
-    /* Setup the Subscribers's QoS */
-    DDS::SubscriberQos sub_qos;
-    status = participant->get_default_subscriber_qos(sub_qos);
-    checkStatus(status, "DDS::DomainParticipant::get_default_subscriber_qos");
-    sub_qos.partition.name.length(1);
-    sub_qos.partition.name[0] = partition_name;
-
-    /* Create the subscriber */
-    DDS::Subscriber_var subscriber = participant->create_subscriber(
-        sub_qos,
-        NULL,
-        DDS::STATUS_MASK_NONE
-    );
-    checkHandle(subscriber.in(), "DDS::DomainParticipant::create_subscriber");
-
-    /* Create the Topic */
-    DDS::Topic_var large_message_topic = participant->create_topic(
-        topic_name,
-        large_message_type_name,
-        default_topic_qos,
-        NULL,
-        DDS::STATUS_MASK_NONE
-    );
-    checkHandle(large_message_topic.in(), "DDS::DomainParticipant::create_topic(LargeMessage)");
-
-    /* Create Topic specific DataReader */
-    DDS::DataReader_var topic_reader = subscriber->create_datareader(
-          large_message_topic.in(),
-          DATAREADER_QOS_USE_TOPIC_QOS,
-          NULL,
-          DDS::STATUS_MASK_NONE
-    );
-    checkHandle(topic_reader.in(), "DDS::Subscriber::create_datareader");
-
-    /* Narrow topic_reader down to LargeMessage specific DataReader */
-    LargeMsg::LargeMessageDataReader_var data_reader = LargeMsg::LargeMessageDataReader::_narrow(topic_reader.in());
-    checkHandle(data_reader.in(), "LargeMsg::LargeMessageDataReader::_narrow");
-
-    LargeMsg::LargeMessageSeq_var large_msg_seq = new LargeMsg::LargeMessageSeq();
-    DDS::SampleInfoSeq_var sample_info_seq = new DDS::SampleInfoSeq();
-
-		struct timespec t;
-		t.tv_sec = 0;
-		t.tv_nsec = 10000000;
-    std::cout << "Polling DataReader..." << std::endl;
-    while (running)
-    {
-        status = data_reader->take(
-            large_msg_seq,
-            sample_info_seq,
-            DDS::LENGTH_UNLIMITED,
-            DDS::ANY_SAMPLE_STATE,
-            DDS::ANY_VIEW_STATE,
-            DDS::ALIVE_INSTANCE_STATE
-        );
-        checkStatus(status, "LargeMsg::LargeMessageDataReader::take");
-
-				/*
-        for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
-        {
-            LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
-            std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
-        }
-				*/
-
-        status = data_reader->return_loan(large_msg_seq, sample_info_seq);
-        checkStatus(status, "LargeMsg::LargeMessageDataReader::return_loan");
-
-        /* Sleep for some amount of time, as not to consume too much CPU cycles. */
-#if defined _WIN32
-        Sleep(100);
-#else
-				clock_nanosleep(CLOCK_MONOTONIC, 0, &t, NULL);
-#endif
-      }
-
-    /* Shutdown */
-    {
-        status = participant->delete_subscriber(subscriber.in());
-        checkStatus(status, "DDS::DomainParticipant::delete_subscriber");
-
-        status = participant->delete_topic(large_message_topic.in());
-        checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
-
-        DDS::string_free(large_message_type_name);
-
-        status = dpf->delete_participant(participant.in());
-        checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
-    }
-		return NULL;
+	sub.teardown();
 }
 
 int main(int argc, char *argv[])
 {
-  struct timespec t;
-
+	rttest_read_args(argc, argv);
   start_rt_thread(&subscriber_thread);
-
 	publisher_thread(NULL);
+	
+	rttest_finish();
 }
