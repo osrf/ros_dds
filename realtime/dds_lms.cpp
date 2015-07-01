@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
 	sub.init();
 
 	rttest_read_args(argc, argv);
+	rttest_set_sched_priority(90, SCHED_RR);
+
 	rttest_spin(sub_callback, NULL);
 
 	rttest_write_results();

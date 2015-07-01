@@ -50,8 +50,9 @@ void *publisher_thread(void *unused)
 
 	rttest_spin(pub_callback, NULL);
 
-	rttest_write_results();
+	rttest_write_results_file("rttest_publisher_results");
 	pub.teardown();
+	rttest_finish();
 }
 
 void *subscriber_thread(void *unused)
@@ -64,9 +65,8 @@ void *subscriber_thread(void *unused)
 	rttest_spin(sub_callback, NULL);
 
 	rttest_write_results_file("rttest_subscriber_results");
-	rttest_finish();
-
 	sub.teardown();
+	rttest_finish();
 }
 
 int main(int argc, char *argv[])
@@ -74,6 +74,4 @@ int main(int argc, char *argv[])
 	rttest_read_args(argc, argv);
   start_rt_thread(&subscriber_thread);
 	publisher_thread(NULL);
-	
-	rttest_finish();
 }
