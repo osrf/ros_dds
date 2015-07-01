@@ -14,6 +14,7 @@ class ExamplePublisher
 		char * large_message_type_name;
 		LargeMsg::LargeMessage msg;
 		DDS::ReturnCode_t status;
+    DDS::InstanceHandle_t instance_handle;
 		int i;
 
 	public:
@@ -94,6 +95,7 @@ bool ExamplePublisher::init()
 
 
 	this->msg.content = std::string(pow(2, 24), '.').c_str();
+	instance_handle = data_writer->register_instance(msg);
 
 	std::cout << "Ready to send LargeMessage's" << std::endl;
 	return true;
@@ -106,7 +108,6 @@ void ExamplePublisher::callback()
 	msg.seq = i;
 	i++;
 
-	DDS::InstanceHandle_t instance_handle = data_writer->register_instance(msg);
 	status = data_writer->write(msg, instance_handle);
 	//checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 }

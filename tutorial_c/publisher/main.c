@@ -3,6 +3,8 @@
 #include "Chat.h"
 #include "unistd.h"
 
+#define MAX_MSG_LEN 128
+
 int main (
   int argc,
   char *argv[])
@@ -156,7 +158,54 @@ int main (
   }
   printf("Created datawriter (NameService).\n");*/
 
-  sleep(5);
+  // Initialize message
+  int ownID = 0;
+
+  Chat_ChatMessage *msg;
+  msg = Chat_ChatMessage__alloc();
+  //checkHandle(msg, "Chat_ChatMessage__alolc");
+  msg->userID = ownID;
+  msg->index = 0;
+  msg->content = DDS_string_alloc(MAX_MSG_LEN);
+  //checkHandle(msg->content, "DDS_string_alloc");
+  snprintf(msg->content, MAX_MSG_LEN, "hello world");
+
+  // register a chat message
+  DDS_InstanceHandle_t userHandle;
+  userHandle = Chat_ChatMessageDataWriter_register_instance(talker, msg);
+
+  Chat_NameService ns;
+  ns.userID = ownID;
+  ns.name = DDS_string_alloc(Chat_MAX_NAME+1);
+  //checkHandle(ns.name, "DDS_string_alloc");
+  char *chatterName;
+  if (chatterName) {
+    strncpy(ns.name, chatterName, Chat_MAX_NAME + 1);
+  }
+  else {
+    snprintf(ns.name, Chat_MAX_NAME+1, "Chatter %d", ownID);
+  }
+
+  // Write user information
+  status = Chat_NameServiceDataWriter_write(nameServer, &ns, DDS_HANDLE_NIL);
+  //checkStatus(status, "Chat_ChatMessageDataWriter_write");
+
+  // Write a message
+  status = Chat_ChatMessageDataWriter_write(talker, msg, userHandle);
+  // checkStatus(status, "Chat_ChatMessageDataWriter_write");
+
+  // pause
+  sleep(1);
+
+  int i = 0;
+  for (i = 1; i < 6; ++i)
+  {
+    msg->index = i;
+    snprintf(msg->content, MAX_MSG_LEN, "Message number: %d", msg->index);
+    status = Chat_ChatMessageDataWriter_write(talker, msg, userHandle);
+    // checkStatus(status, "Chat_ChatMessageDataWriter_write");
+    sleep(1);
+  }
 
 
   /* Remove the DataWriters */

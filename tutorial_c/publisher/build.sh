@@ -8,6 +8,6 @@ cd ..
 rm -fr build
 mkdir build
 cd build
-cmake ..
+cmake .. -DCMAKE_INSTALL_PREFIX=~/local
 make
 cd ..

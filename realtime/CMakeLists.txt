@@ -6,7 +6,7 @@ find_package(rttest REQUIRED)
 
 #include(ExamplePublisher.hpp ExampleSubscriber.hpp)
 
-
+link_directories(${rttest_LIBRARY_DIR})
 include_directories(${rttest_INCLUDE_DIRS})
 
 
