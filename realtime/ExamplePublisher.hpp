@@ -92,11 +92,6 @@ bool ExamplePublisher::init()
 	this->data_writer = LargeMsg::LargeMessageDataWriter::_narrow(topic_writer.in());
 	checkHandle(data_writer.in(), "LargeMsg::LargeMessageDataWriter::_narrow");
 
-	/* Send some large messages */
-	struct timespec t;
-	t.tv_sec = 0;
-	t.tv_nsec = 10000000;
-
 
 	this->msg.content = std::string(pow(2, 24), '.').c_str();
 
@@ -112,7 +107,8 @@ void ExamplePublisher::callback()
 	i++;
 
 	DDS::InstanceHandle_t instance_handle = data_writer->register_instance(msg);
-	checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
+	status = data_writer->write(msg, instance_handle);
+	//checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 }
 
 
