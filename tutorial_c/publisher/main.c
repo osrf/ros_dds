@@ -129,35 +129,6 @@ int main (
   }
   printf("Created datawriter.\n");
 
-  /* Create a DataWriter for the NameService Topic
-     (using the appropriate QoS). */
-  /*dw_qos = DDS_DataWriterQos__alloc();
-  if (!dw_qos) {
-    printf("Allocating datawriter QoS failed!!\n");
-    exit(-1);
-  }
-  status = DDS_Publisher_get_default_datawriter_qos(
-    chatPublisher, dw_qos);
-  if (status != DDS_RETCODE_OK) {
-    printf("Getting default datawriter qos failed!!\n");
-    exit(-1);
-  }
-  //status = DDS_Publisher_copy_from_topic_qos(
-  //  chatPublisher, dw_qos, setting_topic_qos);
-  //checkStatus(status, "DDS_Publisher_copy_from_topic_qos");
-  dw_qos->writer_data_lifecycle.autodispose_unregistered_instances = FALSE;
-  nameServer = DDS_Publisher_create_datawriter(
-    chatPublisher,
-    nameServiceTopic,
-    dw_qos,
-    NULL,
-    DDS_STATUS_MASK_NONE);
-  if (!nameServer) {
-    printf("Creating datawriter (NameService) failed!!\n");
-    exit(-1);
-  }
-  printf("Created datawriter (NameService).\n");*/
-
   // Initialize message
   int ownID = 0;
 
