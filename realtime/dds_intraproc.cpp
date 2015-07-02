@@ -5,9 +5,9 @@
 
 #include <rttest/rttest.h>
 #include "ExampleSubscriber.hpp"
-#include "ExamplePublisher.hpp"
+#include "UnsafePublisher.hpp"
 
-ExamplePublisher pub;
+UnsafePublisher pub;
 ExampleSubscriber sub;
 
 static void start_rt_thread(void *(*f)(void*))

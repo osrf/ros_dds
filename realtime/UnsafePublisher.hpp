@@ -3,7 +3,7 @@
 
 #include "ccpp_LargeMsg.h"
 
-class ExamplePublisher
+class UnsafePublisher
 {
 	private:
 		LargeMsg::LargeMessageDataWriter_var data_writer;
@@ -23,7 +23,7 @@ class ExamplePublisher
 		bool teardown();
 };
 
-bool ExamplePublisher::init()
+bool UnsafePublisher::init()
 {
 	this->i = 0;
 	DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
@@ -101,7 +101,7 @@ bool ExamplePublisher::init()
 	return true;
 }
 
-void ExamplePublisher::callback()
+void UnsafePublisher::callback()
 {
 	checkHandle(&msg, "new LargeMsg::LargeMessage");
 
@@ -113,7 +113,7 @@ void ExamplePublisher::callback()
 }
 
 
-bool ExamplePublisher::teardown()
+bool UnsafePublisher::teardown()
 {
 	std::cout << "Finished" << std::endl;
 	getchar();

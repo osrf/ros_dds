@@ -1,11 +1,11 @@
 #include <string>
 
 #include <rttest/rttest.h>
-#include "ExamplePublisher.hpp"
+#include "UnsafePublisher.hpp"
 
 #define STACK_SIZE 1024*1024*1024
 
-ExamplePublisher pub;
+UnsafePublisher pub;
 
 void* pub_callback(void * unused)
 {
