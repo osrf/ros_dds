@@ -36,7 +36,7 @@ int main (
   DDS_Topic chatMessageTopic;
   char *chatMessageTypeName;
 
-DDS_PublisherQos *pub_qos;
+  DDS_PublisherQos *pub_qos;
   DDS_DataWriterQos *dw_qos;
   DDS_Publisher chatPublisher;
   Chat_NameServiceDataWriter nameServer;
@@ -187,6 +187,8 @@ DDS_PublisherQos *pub_qos;
   // end init
 
   rttest_read_args(argc, argv);
+  rttest_set_sched_priority(90, SCHED_RR);
+
   rttest_spin(callback, NULL);
   rttest_write_results();
   rttest_finish();

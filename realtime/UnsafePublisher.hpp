@@ -50,7 +50,7 @@ bool UnsafePublisher::init()
 	status = participant->get_default_topic_qos(default_topic_qos);
 	checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
 	// default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-	default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
+	// default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
 
 	/* Register the LargeMessage Type */
 	LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
@@ -96,6 +96,7 @@ bool UnsafePublisher::init()
 
 	this->msg.content = std::string(pow(2, 24), '.').c_str();
 	instance_handle = data_writer->register_instance(msg);
+	checkHandle(&msg, "new LargeMsg::LargeMessage");
 
 	std::cout << "Ready to send LargeMessage's" << std::endl;
 	return true;
@@ -103,7 +104,6 @@ bool UnsafePublisher::init()
 
 void UnsafePublisher::callback()
 {
-	checkHandle(&msg, "new LargeMsg::LargeMessage");
 
 	msg.seq = i;
 	i++;
