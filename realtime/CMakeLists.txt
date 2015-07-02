@@ -18,11 +18,11 @@ ospl_add_idl(idl/LargeMsg.idl)
 add_executable(dds_lms dds_lms.cpp)
 target_link_libraries(dds_lms ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
 
-#add_executable(dds_lmp dds_lmp.cpp)
-#target_link_libraries(dds_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
+add_executable(dds_lmp dds_lmp.cpp)
+target_link_libraries(dds_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
 
-add_executable(dds_unsafe_lmp dds_unsafe_lmp.cpp)
-target_link_libraries(dds_unsafe_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
+#add_executable(dds_unsafe_lmp dds_unsafe_lmp.cpp)
+#target_link_libraries(dds_unsafe_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
 
 find_package(Threads)
 if(NOT Threads_FOUND)
