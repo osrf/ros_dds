@@ -3,11 +3,11 @@
 #include <rttest/rttest.h>
 #include "ExamplePublisher.hpp"
 
-ExamplePublisher pub;
+ExamplePublisher *pub;
 
 void* pub_callback(void * unused)
 {
-	pub.callback();
+	pub->callback();
 }
 
 int main(int argc, char *argv[])
@@ -40,18 +40,43 @@ int main(int argc, char *argv[])
   }
 	rttest_read_args(argc, argv);
 
-  pub.message_size = message_length;
-	pub.init();
+  pub = new ExamplePublisher;
+  pub->message_size = message_length;
 
-	rttest_set_sched_priority(90, SCHED_RR);
-	rttest_lock_memory();
-	rttest_prefault_stack_size(message_length + 4096);
-	//rttest_lock_and_prefault_dynamic(STACK_SIZE);
+  //size_t pool_size = message_length;
+
+  /*
+	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+  {
+    std::cout << "Failed to lock dynamic memory." << std::endl;
+  }*/
+
+	pub->init();
+
+  /*struct timespec t;
+  t.tv_sec = 2;
+  t.tv_nsec = 0;*/
+
+	if (rttest_set_sched_priority(98, SCHED_RR) != 0)
+  {
+    std::cout << "Failed to set realtime priority of thread" << std::endl;
+  }
+
+
+  if (rttest_lock_memory() != 0)
+  {
+    perror("Failed to lock memory.");
+  }
+  size_t stack_size = 1024*1024 + message_length + sizeof(*pub);
+  rttest_prefault_stack_size(stack_size);
+
+
+  //clock_nanosleep(0, 0, &t, 0);
 
 	rttest_spin(pub_callback, NULL);
 
 	rttest_write_results();
 	rttest_finish();
 
-	pub.teardown();
+	pub->teardown();
 }

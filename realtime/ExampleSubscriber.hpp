@@ -5,143 +5,152 @@
 
 class ExampleSubscriber
 {
-	private:
-		DDS::DomainParticipantFactory_var dpf;
-		DDS::DomainParticipant_var participant;
-		DDS::Subscriber_var subscriber;
-		LargeMsg::LargeMessageDataReader_var data_reader;
-		DDS::Topic_var large_message_topic;
-		char * large_message_type_name;
-		LargeMsg::LargeMessageSeq_var large_msg_seq;
-		DDS::SampleInfoSeq_var sample_info_seq;
-		bool subscriber_running;
-		DDS::ReturnCode_t status;
+  private:
+    DDS::DomainParticipantFactory_var dpf;
+    DDS::DomainParticipant_var participant;
+    DDS::Subscriber_var subscriber;
+    LargeMsg::LargeMessageDataReader_var data_reader;
+    DDS::Topic_var large_message_topic;
+    char * large_message_type_name;
+    LargeMsg::LargeMessageSeq_var large_msg_seq;
+    DDS::SampleInfoSeq_var sample_info_seq;
+    bool subscriber_running;
+    DDS::ReturnCode_t status;
+    unsigned long msgs_count;
+    DDS::DomainId_t domain;
+    //LargeMsg::LargeMessage *msg;
+    const char * partition_name;
+    const char * topic_name;
+    DDS::TopicQos default_topic_qos;
+    LargeMsg::LargeMessageTypeSupport_var large_message_ts;
+    DDS::SubscriberQos sub_qos;
+    DDS::DataReader_var topic_reader;
 
-	public:
-		void callback();
-		bool init();
-		bool teardown();
+  public:
+    void callback();
+    bool init();
+    bool teardown();
 };
 
 
 bool ExampleSubscriber::init()
 {
-	DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
-	const char * partition_name = "Default";
-	const char * topic_name = "big_chatter";
+  this->msgs_count = 0;
+  domain = DDS::DOMAIN_ID_DEFAULT;
+  partition_name = "Default";
+  topic_name = "big_chatter";
 
-	/* Create Domain Participant Factory */
-	this->dpf = DDS::DomainParticipantFactory::get_instance();
-	checkHandle(dpf.in(), "DDS::DomainParticipantFactory::get_instance");
+  /* Create Domain Participant Factory */
+  this->dpf = DDS::DomainParticipantFactory::get_instance();
+  checkHandle(dpf.in(), "DDS::DomainParticipantFactory::get_instance");
 
-	/* Create Domain Participant */
-	std::cout << "Creating domain participant in subscriber" << std::endl;
-	this->participant = dpf->create_participant(
-			domain,
-			PARTICIPANT_QOS_DEFAULT,
-			NULL,
-			DDS::STATUS_MASK_NONE
-	);
-	checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
+  /* Create Domain Participant */
+  std::cout << "Creating domain participant in subscriber" << std::endl;
+  this->participant = dpf->create_participant(
+      domain,
+      PARTICIPANT_QOS_DEFAULT,
+      NULL,
+      DDS::STATUS_MASK_NONE
+  );
+  checkHandle(participant.in(), "DDS::DomainParticipantFactory::create_participant");
 
 
-	/* Create a default QoS for Topics */
-	DDS::TopicQos default_topic_qos;
-	status = participant->get_default_topic_qos(default_topic_qos);
-	checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
-	// default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-	default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
+  /* Create a default QoS for Topics */
+  status = participant->get_default_topic_qos(default_topic_qos);
+  checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
+  // default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
+  default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
 
-	/* Register the LargeMessage Type */
-	LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
-	checkHandle(large_message_ts.in(), "new LargeMessageTypeSupport");
-	this->large_message_type_name = large_message_ts->get_type_name();
-	status = large_message_ts->register_type(participant.in(), large_message_type_name);
-	checkStatus(status, "LargeMsg::LargeMessageTypeSupport::register_type");
+  /* Register the LargeMessage Type */
+  large_message_ts = new LargeMsg::LargeMessageTypeSupport();
+  checkHandle(large_message_ts.in(), "new LargeMessageTypeSupport");
+  this->large_message_type_name = large_message_ts->get_type_name();
+  status = large_message_ts->register_type(participant.in(), large_message_type_name);
+  checkStatus(status, "LargeMsg::LargeMessageTypeSupport::register_type");
 
-	/* Setup the Subscribers's QoS */
-	DDS::SubscriberQos sub_qos;
-	status = participant->get_default_subscriber_qos(sub_qos);
-	checkStatus(status, "DDS::DomainParticipant::get_default_subscriber_qos");
-	sub_qos.partition.name.length(1);
-	sub_qos.partition.name[0] = partition_name;
+  /* Setup the Subscribers's QoS */
+  status = participant->get_default_subscriber_qos(sub_qos);
+  checkStatus(status, "DDS::DomainParticipant::get_default_subscriber_qos");
+  sub_qos.partition.name.length(1);
+  sub_qos.partition.name[0] = partition_name;
 
-	/* Create the subscriber */
-	this->subscriber = participant->create_subscriber(
-			sub_qos,
-			NULL,
-			DDS::STATUS_MASK_NONE
-	);
-	checkHandle(subscriber.in(), "DDS::DomainParticipant::create_subscriber");
+  /* Create the subscriber */
+  this->subscriber = participant->create_subscriber(
+      sub_qos,
+      NULL,
+      DDS::STATUS_MASK_NONE
+  );
+  checkHandle(subscriber.in(), "DDS::DomainParticipant::create_subscriber");
 
-	/* Create the Topic */
-	this->large_message_topic = participant->create_topic(
-			topic_name,
-			large_message_type_name,
-			default_topic_qos,
-			NULL,
-			DDS::STATUS_MASK_NONE
-	);
-	checkHandle(large_message_topic.in(), "DDS::DomainParticipant::create_topic(LargeMessage)");
+  /* Create the Topic */
+  this->large_message_topic = participant->create_topic(
+      topic_name,
+      large_message_type_name,
+      default_topic_qos,
+      NULL,
+      DDS::STATUS_MASK_NONE
+  );
+  checkHandle(large_message_topic.in(), "DDS::DomainParticipant::create_topic(LargeMessage)");
 
-	/* Create Topic specific DataReader */
-	DDS::DataReader_var topic_reader = subscriber->create_datareader(
-				large_message_topic.in(),
-				DATAREADER_QOS_USE_TOPIC_QOS,
-				NULL,
-				DDS::STATUS_MASK_NONE
-	);
-	checkHandle(topic_reader.in(), "DDS::Subscriber::create_datareader");
+  /* Create Topic specific DataReader */
+  topic_reader = subscriber->create_datareader(
+        large_message_topic.in(),
+        DATAREADER_QOS_USE_TOPIC_QOS,
+        NULL,
+        DDS::STATUS_MASK_NONE
+  );
+  checkHandle(topic_reader.in(), "DDS::Subscriber::create_datareader");
 
-	/* Narrow topic_reader down to LargeMessage specific DataReader */
-	this->data_reader = LargeMsg::LargeMessageDataReader::_narrow(topic_reader.in());
-	checkHandle(data_reader.in(), "LargeMsg::LargeMessageDataReader::_narrow");
+  /* Narrow topic_reader down to LargeMessage specific DataReader */
+  this->data_reader = LargeMsg::LargeMessageDataReader::_narrow(topic_reader.in());
+  checkHandle(data_reader.in(), "LargeMsg::LargeMessageDataReader::_narrow");
 
-	this->large_msg_seq = new LargeMsg::LargeMessageSeq();
-	this->sample_info_seq = new DDS::SampleInfoSeq();
+  this->large_msg_seq = new LargeMsg::LargeMessageSeq();
+  this->sample_info_seq = new DDS::SampleInfoSeq();
 
-	std::cout << "Polling DataReader..." << std::endl;
-	return true;
+  std::cout << "Polling DataReader..." << std::endl;
+  return true;
 }
 
 void ExampleSubscriber::callback()
 {
-		status = data_reader->take(
-				large_msg_seq,
-				sample_info_seq,
-				DDS::LENGTH_UNLIMITED,
-				DDS::ANY_SAMPLE_STATE,
-				DDS::ANY_VIEW_STATE,
-				DDS::ALIVE_INSTANCE_STATE
-		);
-		checkStatus(status, "LargeMsg::LargeMessageDataReader::take");
+  status = data_reader->take(
+      large_msg_seq,
+      sample_info_seq,
+      DDS::LENGTH_UNLIMITED,
+      DDS::ANY_SAMPLE_STATE,
+      DDS::ANY_VIEW_STATE,
+      DDS::ALIVE_INSTANCE_STATE
+  );
+  checkStatus(status, "LargeMsg::LargeMessageDataReader::take");
 
-		/*
-		for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
-		{
-				LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
-				std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
-		}
-		*/
+  for (DDS::ULong i = 0; i < large_msg_seq->length(); i++)
+  {
+    //msg = &(large_msg_seq[i]);
+    ++this->msgs_count;
+  }
 
-		status = data_reader->return_loan(large_msg_seq, sample_info_seq);
-		checkStatus(status, "LargeMsg::LargeMessageDataReader::return_loan");
+  status = data_reader->return_loan(large_msg_seq, sample_info_seq);
+  checkStatus(status, "LargeMsg::LargeMessageDataReader::return_loan");
 }
 
 bool ExampleSubscriber::teardown()
 {
-	// TODO investigate why preconditions not met
-	/* Shutdown */
-	status = participant->delete_subscriber(subscriber.in());
-	//checkStatus(status, "DDS::DomainParticipant::delete_subscriber");
+  std::cout << "Subscriber received " << this->msgs_count << " messages." << std::endl;
+  /* Shutdown */
+  if (subscriber.in() != NULL) {
+    status = participant->delete_subscriber(subscriber.in());
+    checkStatus(status, "DDS::DomainParticipant::delete_subscriber");
+  }
 
-	status = participant->delete_topic(large_message_topic.in());
-	//checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
+  status = participant->delete_topic(large_message_topic.in());
+  checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
 
-	DDS::string_free(large_message_type_name);
+  DDS::string_free(large_message_type_name);
 
-	status = dpf->delete_participant(participant.in());
-	//checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
-	return true;
+  status = dpf->delete_participant(participant.in());
+  checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
+
+  return true;
 }
 

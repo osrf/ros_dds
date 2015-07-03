@@ -14,6 +14,7 @@ static void catch_function(int signo) {
 
 int main(int argc, char *argv[])
 {
+    int msgs_received = 0;
     /* Register a signal handler so DDS doesn't just sit there... */
     if (signal(SIGINT, catch_function) == SIG_ERR)
     {
@@ -111,6 +112,7 @@ int main(int argc, char *argv[])
         {
             LargeMsg::LargeMessage *msg = &(large_msg_seq[i]);
             std::cout << "[" << msg->seq << "]: " << strlen(msg->content.m_ptr) << std::endl;
+            ++msgs_received;
         }
 
         status = data_reader->return_loan(large_msg_seq, sample_info_seq);
@@ -124,6 +126,7 @@ int main(int argc, char *argv[])
 #endif
       }
 
+    std::cout << "Received " << msgs_received << " messages." << std::endl;
     /* Shutdown */
     {
         status = participant->delete_subscriber(subscriber.in());

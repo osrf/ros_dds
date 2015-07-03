@@ -15,7 +15,16 @@ class ExamplePublisher
 		char * large_message_type_name;
 		LargeMsg::LargeMessage msg;
 		DDS::ReturnCode_t status;
+    // DDS::InstanceHandle_t instance_handle;
+    DDS::DomainId_t domain;
+    const char * partition_name;
+    const char * topic_name;
+    DDS::TopicQos default_topic_qos;
+    LargeMsg::LargeMessageTypeSupport_var large_message_ts;
+    DDS::PublisherQos pub_qos;
+    DDS::DataWriter_var topic_writer;
     DDS::InstanceHandle_t instance_handle;
+
 		int i;
 
 	public:
@@ -33,9 +42,9 @@ ExamplePublisher::ExamplePublisher(unsigned int message_size) : message_size(mes
 bool ExamplePublisher::init()
 {
 	this->i = 0;
-	DDS::DomainId_t domain = DDS::DOMAIN_ID_DEFAULT;
-	const char * partition_name = "Default";
-	const char * topic_name = "big_chatter";
+	domain = DDS::DOMAIN_ID_DEFAULT;
+	partition_name = "Default";
+	topic_name = "big_chatter";
 
 	/* Create Domain Participant Factory */
 	this->dpf = DDS::DomainParticipantFactory::get_instance();
@@ -53,21 +62,19 @@ bool ExamplePublisher::init()
 
 
 	/* Create a default QoS for Topics */
-	DDS::TopicQos default_topic_qos;
 	status = participant->get_default_topic_qos(default_topic_qos);
 	checkStatus(status, "DDS::DomainParticipant::get_default_topic_qos");
 	// default_topic_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
-	// default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
+	default_topic_qos.reliability.kind = DDS::BEST_EFFORT_RELIABILITY_QOS;
 
 	/* Register the LargeMessage Type */
-	LargeMsg::LargeMessageTypeSupport_var large_message_ts = new LargeMsg::LargeMessageTypeSupport();
+	this->large_message_ts = new LargeMsg::LargeMessageTypeSupport();
 	checkHandle(large_message_ts.in(), "new LargeMessageTypeSupport");
 	this->large_message_type_name = large_message_ts->get_type_name();
 	status = large_message_ts->register_type(participant.in(), large_message_type_name);
 	checkStatus(status, "LargeMsg::LargeMessageTypeSupport::register_type");
 
 	/* Setup the Publisher's QoS */
-	DDS::PublisherQos pub_qos;
 	status = participant->get_default_publisher_qos(pub_qos);
 	checkStatus(status, "DDS::DomainParticipant::get_default_publisher_qos");
 	pub_qos.partition.name.length(1);
@@ -88,7 +95,7 @@ bool ExamplePublisher::init()
 	checkHandle(large_message_topic.in(), "DDS::DomainParticipant::create_topic(LargeMessage)");
 
 	/* Create Topic DataWriter */
-	DDS::DataWriter_var topic_writer = publisher->create_datawriter(
+	topic_writer = publisher->create_datawriter(
 				large_message_topic.in(),
 				DATAWRITER_QOS_USE_TOPIC_QOS,
 				NULL,
@@ -100,9 +107,7 @@ bool ExamplePublisher::init()
 	this->data_writer = LargeMsg::LargeMessageDataWriter::_narrow(topic_writer.in());
 	checkHandle(data_writer.in(), "LargeMsg::LargeMessageDataWriter::_narrow");
 
-
 	this->msg.content = std::string(this->message_size, '.').c_str();
-	instance_handle = data_writer->register_instance(msg);
 	checkHandle(&msg, "new LargeMsg::LargeMessage");
 
 	std::cout << "Ready to send LargeMessage's" << std::endl;
@@ -111,34 +116,35 @@ bool ExamplePublisher::init()
 
 void ExamplePublisher::callback()
 {
-
 	msg.seq = i;
-	i++;
+	++i;
+	instance_handle = data_writer->register_instance(msg);
 
 	status = data_writer->write(msg, instance_handle);
-	//checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
+
+	checkStatus(status, "LargeMsg::LargeMessageDataWriter::write");
 }
 
 
 bool ExamplePublisher::teardown()
 {
 	std::cout << "Finished" << std::endl;
-	getchar();
+	//getchar();
 	/* Shutdown */
 	{
-			status = publisher->delete_datawriter(data_writer.in());
-			checkStatus(status, "DDS::Publisher::delete_datawriter(data_writer)");
+    status = publisher->delete_datawriter(data_writer.in());
+    checkStatus(status, "DDS::Publisher::delete_datawriter(data_writer)");
 
-			status = participant->delete_publisher(publisher.in());
-			checkStatus(status, "DDS::DomainParticipant::delete_publisher");
+    status = participant->delete_publisher(publisher.in());
+    checkStatus(status, "DDS::DomainParticipant::delete_publisher");
 
-			status = participant->delete_topic(large_message_topic.in());
-			checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
+    status = participant->delete_topic(large_message_topic.in());
+    checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
 
-			DDS::string_free(large_message_type_name);
+    DDS::string_free(large_message_type_name);
 
-			status = dpf->delete_participant(participant.in());
-			checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
+    status = dpf->delete_participant(participant.in());
+    checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
 	}
 	return true;
 }
