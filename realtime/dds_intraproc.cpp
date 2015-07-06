@@ -6,8 +6,8 @@
 #include "ExampleSubscriber.hpp"
 #include "ExamplePublisher.hpp"
 
-ExamplePublisher pub;
-ExampleSubscriber sub;
+ExamplePublisher *pub;
+ExampleSubscriber *sub;
 unsigned int message_length;
 
 static void start_rt_thread(void *(*f)(void*))
@@ -24,7 +24,7 @@ static void start_rt_thread(void *(*f)(void*))
 
   /* Set the requested stacksize for this thread */
 	// put this in rttest?
-  if (pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 2*message_length + sizeof(sub)))
+  if (pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 2*message_length + sizeof(*sub)))
   {
     fprintf(stderr, "Couldn't set requested stack size for pthread");
     exit(1);
@@ -36,36 +36,37 @@ static void start_rt_thread(void *(*f)(void*))
 
 void* pub_callback(void * unused)
 {
-	pub.callback();
+  if (pub != NULL)
+    pub->callback();
 }
 
 void* sub_callback(void * unused)
 {
-	sub.callback();
+  if (sub != NULL)
+    sub->callback();
 }
 
 void *publisher_thread(void *unused)
 {
-	pub.init();
-
 	rttest_spin(pub_callback, NULL);
 
 	rttest_write_results_file("rttest_publisher_results");
-	pub.teardown();
+  if (pub != NULL)
+    pub->teardown();
 	rttest_finish();
 }
 
 void *subscriber_thread(void *unused)
 {
-	sub.init();
-
 	rttest_init_new_thread();
 	rttest_set_sched_priority(98, SCHED_RR);
 
 	rttest_spin(sub_callback, NULL);
 
 	rttest_write_results_file("rttest_subscriber_results");
-	sub.teardown();
+  std::cout << "Subscriber received " << sub->msgs_count << " messages." << std::endl;
+  /*if (sub != NULL)
+    sub->teardown();*/
 	rttest_finish();
 }
 
@@ -98,22 +99,31 @@ int main(int argc, char *argv[])
   }
 	rttest_read_args(argc, argv);
 
-  pub.message_size = message_length;
-  size_t stack_size = message_length*2 + sizeof(pub) + sizeof(sub);
+  pub = new ExamplePublisher();
+  pub->message_size = message_length;
+	pub->init();
+  sub = new ExampleSubscriber();
+	sub->init();
+  size_t stack_size = message_length*2 + sizeof(*pub) + sizeof(*sub);
   size_t pool_size = 2*message_length;
 
-	rttest_lock_and_prefault_dynamic(pool_size);
+	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+  {
+    perror("Failed to lock dynamic memory. Process might not be real-time safe");
+  }
 	rttest_prefault_stack_size(stack_size);
-
-	rttest_read_args(argc, argv);
 
   start_rt_thread(&subscriber_thread);
 
 	rttest_set_sched_priority(98, SCHED_RR);
 
 	publisher_thread(NULL);
+  /*
   for (int i = 0; i < argc; ++i)
   {
     free(argv_copy[i]);
   }
+  */
+
+  //delete sub;
 }

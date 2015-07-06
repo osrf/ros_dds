@@ -1,25 +1,34 @@
 #include <signal.h>
+#include <sys/mman.h>
 
 #include <rttest/rttest.h>
 #include "ExampleSubscriber.hpp"
 
-ExampleSubscriber sub;
+ExampleSubscriber *sub;
 
 void* sub_callback(void * unused)
 {
-	sub.callback();
+	sub->callback();
 }
 
 int main(int argc, char *argv[])
 {
-	sub.init();
+  sub = new ExampleSubscriber();
+	sub->init();
 
 	rttest_read_args(argc, argv);
 	rttest_set_sched_priority(90, SCHED_RR);
 
   size_t pool_size = 1024*1024*1024;
-  size_t stack_size = sizeof(sub) + 1024*1024;
-	rttest_lock_and_prefault_dynamic(pool_size);
+  size_t stack_size = sizeof(*sub) + 1024*1024;
+  /*
+  getchar();
+	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+  {
+    perror("Failed to lock memory");
+  }
+  */
+
 	rttest_prefault_stack_size(stack_size);
 
 	rttest_spin(sub_callback, NULL);
@@ -27,5 +36,7 @@ int main(int argc, char *argv[])
 	rttest_write_results();
 	rttest_finish();
 
-	sub.teardown();
+  std::cout << "Subscriber received " << sub->msgs_count << " messages." << std::endl;
+	sub->teardown();
+  delete sub;
 }

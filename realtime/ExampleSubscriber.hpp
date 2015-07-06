@@ -16,9 +16,7 @@ class ExampleSubscriber
     DDS::SampleInfoSeq_var sample_info_seq;
     bool subscriber_running;
     DDS::ReturnCode_t status;
-    unsigned long msgs_count;
     DDS::DomainId_t domain;
-    //LargeMsg::LargeMessage *msg;
     const char * partition_name;
     const char * topic_name;
     DDS::TopicQos default_topic_qos;
@@ -27,6 +25,7 @@ class ExampleSubscriber
     DDS::DataReader_var topic_reader;
 
   public:
+    unsigned long msgs_count;
     void callback();
     bool init();
     bool teardown();
@@ -136,20 +135,22 @@ void ExampleSubscriber::callback()
 
 bool ExampleSubscriber::teardown()
 {
-  std::cout << "Subscriber received " << this->msgs_count << " messages." << std::endl;
   /* Shutdown */
-  if (subscriber.in() != NULL) {
-    status = participant->delete_subscriber(subscriber.in());
-    checkStatus(status, "DDS::DomainParticipant::delete_subscriber");
+  if (participant != NULL)
+  {
+    if (subscriber.in() != NULL) {
+      status = participant->delete_subscriber(subscriber.in());
+      checkStatus(status, "DDS::DomainParticipant::delete_subscriber");
+    }
+
+    status = participant->delete_topic(large_message_topic.in());
+    checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
+
+    status = dpf->delete_participant(participant.in());
+    checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
   }
 
-  status = participant->delete_topic(large_message_topic.in());
-  checkStatus(status, "DDS::DomainParticipant::delete_topic (large_message_topic)");
-
   DDS::string_free(large_message_type_name);
-
-  status = dpf->delete_participant(participant.in());
-  checkStatus(status, "DDS::DomainParticipantFactory::delete_participant");
 
   return true;
 }
