@@ -154,6 +154,6 @@ bool ExampleSubscriber::teardown()
   /* De-allocate the SubscriberQoS holder. */
   DDS_free(this->sub_qos); // Note that DDS_free recursively
                            // de-allocates all indirections!!
-  printf("Received %lu total messages.", this->received_msgs_count);
+  printf("Received %lu total messages.\n", this->received_msgs_count);
   return false;
 }
