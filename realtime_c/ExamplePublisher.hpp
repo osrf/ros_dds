@@ -173,7 +173,6 @@ bool ExamplePublisher::init()
   // snprintf(msg->content, message_size_const, msg_content, msg->seq);
 
   // register a chat message
-  this->userHandle = LargeMsg_LargeMessageDataWriter_register_instance(talker, msg);
 
   printf("Created user handle and preallocated message.\n");
 
@@ -192,6 +191,7 @@ void ExamplePublisher::callback()
 
   this->userHandle = LargeMsg_LargeMessageDataWriter_register_instance(talker, msg);
   status = LargeMsg_LargeMessageDataWriter_write(talker, msg, userHandle);
+  LargeMsg_LargeMessageDataWriter_unregister_instance(talker, msg, this->userHandle );
   checkStatus(status, "LargeMsg_LargeMessageDataWriter_write");
   ++i;
 }
