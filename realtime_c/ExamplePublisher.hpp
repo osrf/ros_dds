@@ -11,32 +11,19 @@ class ExamplePublisher
 	private:
     DDS_DomainParticipantFactory dpf;
     DDS_DomainParticipant dp;
-    DDS_DomainId_t domain = DDS_DOMAIN_ID_DEFAULT;
-    LargeMsg_LargeMessageTypeSupport chatMessageTS;
-    DDS_Topic chatMessageTopic;
-    char *chatMessageTypeName;
-
     DDS_PublisherQos *pub_qos;
     DDS_DataWriterQos *dw_qos;
     DDS_Publisher chatPublisher;
-    //LargeMsg_NameServiceDataWriter nameServer;
-    char *partitionName = NULL;
-
-    DDS_Topic nameServiceTopic;
-
-    int ownID;
-
-    // LargeMsg_NameService ns;
-
-		int i;
-
+    DDS_Topic chatMessageTopic;
     LargeMsg_LargeMessageDataWriter talker;
     LargeMsg_LargeMessage *msg;
     DDS_ReturnCode_t status;
     DDS_InstanceHandle_t userHandle;
-    char *msg_content;
+
+		int i;
 
 	public:
+    unsigned int message_size;
 		void callback();
 		bool init();
 		bool teardown();
@@ -44,6 +31,18 @@ class ExamplePublisher
 
 bool ExamplePublisher::init()
 {
+  if (message_size > MAX_MSG_LEN)
+  {
+    std::cout << "Clamping message size to maximum" << std::endl;
+    message_size = MAX_MSG_LEN;
+  }
+  if (message_size == 0)
+  {
+    std::cout << "Cannot have 0 message size, clamping to 1" << std::endl;
+    message_size = 1;
+  }
+
+  DDS_DomainId_t domain = DDS_DOMAIN_ID_DEFAULT;
 	this->i = 0;
   /* Create a DomainParticipantFactory and a DomainParticipant */
   /* (using Default QoS settings). */
@@ -68,12 +67,12 @@ bool ExamplePublisher::init()
 
 
   /* Register the required data type for LargeMessage. */
-  this->chatMessageTS = LargeMsg_LargeMessageTypeSupport__alloc();
+  LargeMsg_LargeMessageTypeSupport chatMessageTS = LargeMsg_LargeMessageTypeSupport__alloc();
   if (!chatMessageTS) {
     printf ("Allocating TypeSupport failed!!\n");
     exit(-1);
   };
-  this->chatMessageTypeName = LargeMsg_LargeMessageTypeSupport_get_type_name(chatMessageTS);
+  char *chatMessageTypeName = LargeMsg_LargeMessageTypeSupport_get_type_name(chatMessageTS);
   status = LargeMsg_LargeMessageTypeSupport_register_type(
     chatMessageTS, dp, chatMessageTypeName);
   if (status != DDS_RETCODE_OK) {
@@ -99,7 +98,7 @@ bool ExamplePublisher::init()
   /* Adapt the default PublisherQos to write into the
      "LargeMessageRoom" Partition. */
 
-  /*this->partitionName = "LargeMessageRoom";
+  const char *partitionName = "chatter";
   pub_qos = DDS_PublisherQos__alloc();
   if (!pub_qos) {
     printf("Allocating PublisherQos failed!!\n");
@@ -125,7 +124,6 @@ bool ExamplePublisher::init()
     exit(-1);
   }
   strcpy (pub_qos->partition.name._buffer[0], partitionName);
-  */
 
   /* Create a Publisher for the chatter application. */
   this->chatPublisher = DDS_DomainParticipant_create_publisher(
@@ -150,36 +148,24 @@ bool ExamplePublisher::init()
   }
   printf("Created datawriter.\n");
 
-  this->ownID = 0;
+  int ownID = 0;
 
-  // TODO chat message should become LargeMessage
   this->msg = LargeMsg_LargeMessage__alloc();
-  //checkHandle(msg, "LargeMsg_LargeMessage__alloc");
   msg->seq = 0;
   msg->content = DDS_string_alloc(MAX_MSG_LEN);
-  //checkHandle(msg->content, "DDS_string_alloc");
-  //snprintf(msg->content, MAX_MSG_LEN, "hello world");
-  snprintf(msg->content, MAX_MSG_LEN, this->msg_content, msg->seq);
+
+  int j;
+  const unsigned int message_size_const = message_size;
+  char msg_content[message_size_const];
+  for (j < 0; j < message_size_const; ++j)
+  {
+    msg_content[j] = '.';
+  }
+  snprintf(msg->content, message_size_const, msg_content, msg->seq);
 
   // register a chat message
   this->userHandle = LargeMsg_LargeMessageDataWriter_register_instance(talker, msg);
 
-  //this->ns.userID = ownID;
-  //ns.name = DDS_string_alloc(LargeMsg_MAX_NAME+1);
-  //checkHandle(ns.name, "DDS_string_alloc");
-  char *chatterName;
- // snprintf(ns.name, LargeMsg_MAX_NAME+1, "LargeMessage %d", ownID);
-
-  int j;
-  this->msg_content = (char*) malloc(MAX_MSG_LEN);
-  for (j < 0; j < MAX_MSG_LEN; ++j)
-  {
-    msg_content[j] = '.';
-  }
-
-  // Write user information
-  //status = LargeMsg_NameServiceDataWriter_write(nameServer, &ns, DDS_HANDLE_NIL);
-  //checkStatus(status, "LargeMsg_LargeMessageDataWriter_write");
 
   printf("Created user handle and preallocated message.\n");
 
@@ -190,7 +176,7 @@ void ExamplePublisher::callback()
 {
   this->msg->seq = this->i;
   status = LargeMsg_LargeMessageDataWriter_write(talker, msg, userHandle);
-  // checkStatus(status, "LargeMsg_LargeMessageDataWriter_write");
+  checkStatus(status, "LargeMsg_LargeMessageDataWriter_write");
   ++i;
 }
 

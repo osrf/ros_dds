@@ -16,9 +16,13 @@ int main(int argc, char *argv[])
 
 	rttest_read_args(argc, argv);
 	rttest_set_sched_priority(90, SCHED_RR);
-	//rttest_lock_memory();
+
+	if (rttest_lock_memory() != 0)
+  {
+    perror("Failed to lock memory");
+  }
+
 	//rttest_prefault_stack_size(STACK_SIZE);
-	rttest_lock_and_prefault_dynamic(STACK_SIZE);
 
 	rttest_spin(sub_callback, NULL);
 
