@@ -1,6 +1,6 @@
 #include "dds_dcps.h"
 #include "LargeMsg.h"
-//#include "check_status.h"
+#include "check_status.h"
 #include "unistd.h"
 
 class ExampleSubscriber
@@ -67,6 +67,18 @@ bool ExampleSubscriber::init()
     exit(-1);
   };
   printf("Registered data type.\n");
+
+  /* Set QoS policty to BEST_EFFORT */
+  DDS_TopicQos *topic_qos = DDS_TopicQos__alloc();
+  status = DDS_DomainParticipant_get_default_topic_qos(dp, topic_qos);
+  checkStatus(status, "DDS_DomainParticipant_get_default_topic_qos");
+  topic_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+
+  /* Make the tailored QoS the new default. */
+  status = DDS_DomainParticipant_set_default_topic_qos(participant,
+      topic_qos);
+  checkStatus(status, "DDS_DomainParticipant_set_default_topic_qos");
+
   /*Create the LargeMessage topic */
   this->chatMessageTopic = DDS_DomainParticipant_create_topic(
     dp,
