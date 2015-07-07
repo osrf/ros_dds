@@ -56,7 +56,8 @@ bool ExampleSubscriber::init()
   if (!chatMessageTS) {
     printf ("Allocating TypeSupport failed!!\n");
     exit(-1);
-  };
+  }
+
   char *chatMessageTypeName = LargeMsg_LargeMessageTypeSupport_get_type_name(chatMessageTS);
   status = LargeMsg_LargeMessageTypeSupport_register_type(
     chatMessageTS, dp, chatMessageTypeName);
@@ -71,9 +72,10 @@ bool ExampleSubscriber::init()
   status = DDS_DomainParticipant_get_default_topic_qos(dp, topic_qos);
   checkStatus(status, "DDS_DomainParticipant_get_default_topic_qos");
   topic_qos->reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+  //topic_qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
 
   /* Make the tailored QoS the new default. */
-  status = DDS_DomainParticipant_set_default_topic_qos(participant,
+  status = DDS_DomainParticipant_set_default_topic_qos(dp,
       topic_qos);
   checkStatus(status, "DDS_DomainParticipant_set_default_topic_qos");
 
@@ -82,7 +84,7 @@ bool ExampleSubscriber::init()
     dp,
     "LargeMsg_LargeMessage",
     chatMessageTypeName,
-    DDS_TOPIC_QOS_DEFAULT,
+    topic_qos,
     NULL,
     DDS_STATUS_MASK_NONE);
   if (!chatMessageTopic) {
