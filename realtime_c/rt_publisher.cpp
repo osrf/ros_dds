@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
 	rttest_read_args(argc, argv);
 	rttest_set_sched_priority(90, SCHED_RR);
-  //getchar();
+  getchar();
 	if (rttest_lock_memory() != 0)
   {
     perror("Failed to lock memory");

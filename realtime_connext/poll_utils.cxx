@@ -14,6 +14,8 @@
 
 #include <rttest/rttest.h>
 
+unsigned int samples_received = 0;
+
 struct PublisherNode
 {
     pollDataWriter * poll_writer;
@@ -33,6 +35,7 @@ struct Arguments
 static int subscriber_shutdown(
     DDSDomainParticipant *participant)
 {
+    printf("Samples received by subscriber: %d\n", samples_received);
     DDS_ReturnCode_t retcode;
     int status = 0;
 
@@ -94,6 +97,7 @@ void *subscriber_callback(void *args)
             continue;
         len ++;
         sum += data_seq[i].seq;
+        ++samples_received;
     }
 
     /*
