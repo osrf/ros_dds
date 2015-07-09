@@ -9,7 +9,8 @@
  use the software.
  ******************************************************************************/
 struct poll {
+    long key;
     long seq;
     string content;
 };
-
+#pragma keylist poll key

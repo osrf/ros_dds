@@ -57,13 +57,11 @@ static int subscriber_shutdown(
        domain participant factory for people who want to release memory used
        by the participant factory. Uncomment the following block of code for
        clean destruction of the singleton. */
-/*
     retcode = DDSDomainParticipantFactory::finalize_instance();
     if (retcode != DDS_RETCODE_OK) {
         printf("finalize_instance error %d\n", retcode);
-        status = -1;
+        //status = -1;
     }
-*/
     return status;
 }
 
@@ -221,7 +219,6 @@ int subscriber_main(int argc, char *argv[])
     rttest_prefault_stack();
 
     /* Main loop */
-    // TODO rttest_spin here
     rttest_spin(subscriber_callback, static_cast<void*>(poll_reader));
 
     /* Delete all entities */
@@ -270,13 +267,11 @@ static int publisher_shutdown(
        domain participant factory for people who want to release memory used
        by the participant factory. Uncomment the following block of code for
        clean destruction of the singleton. */
-/*
     retcode = DDSDomainParticipantFactory::finalize_instance();
     if (retcode != DDS_RETCODE_OK) {
         printf("finalize_instance error %d\n", retcode);
-        status = -1;
+        //status = -1;
     }
-*/
 
     return status;
 }
@@ -285,7 +280,6 @@ void *publisher_callback(void *args)
 {
     PublisherNode *pub_node = static_cast<PublisherNode*>(args);
     // message instance, instance_handle, poll_writer
-    /* TODO Modify the data to be written here */
     /* Set x to a random number between 0 and 9 */
     pub_node->instance->seq = (int)(rand()/(RAND_MAX/10.0));
     for (int j = 0; j < pub_node->message_length; j++) {
@@ -416,9 +410,8 @@ int publisher_main(int argc, char *argv[])
     /* For a data type that has a key, if the same instance is going to be
        written multiple times, initialize the key here
        and register the keyed instance prior to writing */
-/*
     instance_handle = poll_writer->register_instance(*instance);
-*/
+
     PublisherNode pub_node;
     pub_node.instance = instance;
     pub_node.instance_handle = instance_handle;
@@ -442,13 +435,11 @@ int publisher_main(int argc, char *argv[])
     rttest_write_results_file("rttest_publisher_results");
     rttest_finish();
 
-/*
     retcode = poll_writer->unregister_instance(
         *instance, instance_handle);
     if (retcode != DDS_RETCODE_OK) {
         printf("unregister instance error %d\n", retcode);
     }
-*/
 
     /* Delete data sample */
     retcode = pollTypeSupport::delete_data(instance);
