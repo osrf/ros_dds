@@ -59,10 +59,13 @@ void *publisher_thread(void *unused)
 void *subscriber_thread(void *unused)
 {
 	rttest_init_new_thread();
-	rttest_set_sched_priority(98, SCHED_RR);
+	if (rttest_set_sched_priority(98, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priorty and policy of thread");
+  }
 
 	rttest_spin(sub_callback, NULL);
-
+ 
 	rttest_write_results_file("rttest_subscriber_results");
   std::cout << "Subscriber received " << sub->msgs_count << " messages." << std::endl;
   /*if (sub != NULL)
@@ -109,13 +112,16 @@ int main(int argc, char *argv[])
 
 	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
   {
-    perror("Failed to lock dynamic memory. Process might not be real-time safe");
+    perror("Failed to lock dynamic memory");
   }
 	rttest_prefault_stack_size(stack_size);
 
   start_rt_thread(&subscriber_thread);
 
-	rttest_set_sched_priority(98, SCHED_RR);
+	if (rttest_set_sched_priority(98, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priority and policy");
+  }
 
 	publisher_thread(NULL);
   /*

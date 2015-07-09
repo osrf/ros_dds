@@ -103,6 +103,15 @@ bool ExamplePublisher::init()
 
 	this->msg.content = std::string(this->message_size, '.').c_str();
 	checkHandle(&msg, "new LargeMsg::LargeMessage");
+	this->instance_handle = this->data_writer->register_instance(msg);
+	status = data_writer->write(msg, instance_handle);
+  /*
+  if (this->instance_handle == DDS::HANDLE_NIL)
+  {
+    std::cout << "Instance handle was NIL" << std::endl;
+    exit(-1);
+  }
+  */
 
 	std::cout << "Ready to send LargeMessage's" << std::endl;
 	return true;
@@ -112,7 +121,6 @@ void ExamplePublisher::callback()
 {
 	this->msg.seq = this->i;
 	++i;
-	this->instance_handle = this->data_writer->register_instance(msg);
 
 	status = data_writer->write(msg, instance_handle);
 

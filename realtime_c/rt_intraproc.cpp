@@ -56,7 +56,11 @@ void *publisher_thread(void *unused)
 void *subscriber_thread(void *unused)
 {
 	rttest_init_new_thread();
-	rttest_set_sched_priority(98, SCHED_RR);
+	if (rttest_set_sched_priority(97, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priority and policy of thread");
+  }
+
 
 	rttest_spin(sub_callback, NULL);
 
@@ -111,7 +115,9 @@ int main(int argc, char *argv[])
 
   start_rt_thread(&subscriber_thread);
 
-	rttest_set_sched_priority(98, SCHED_RR);
-
+	if (rttest_set_sched_priority(98, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priority and policy of thread");
+  }
 	publisher_thread(NULL);
 }

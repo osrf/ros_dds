@@ -15,7 +15,11 @@ int main(int argc, char *argv[])
 	sub.init();
 
 	rttest_read_args(argc, argv);
-	rttest_set_sched_priority(90, SCHED_RR);
+
+	if (rttest_set_sched_priority(90, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priority and policy of thread");
+  }
 
 	if (rttest_lock_memory() != 0)
   {

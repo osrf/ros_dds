@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   }
 
 
-	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+	if (rttest_lock_memory() != 0)
   {
     perror("Failed to lock dynamic memory");
   }

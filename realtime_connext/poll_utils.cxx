@@ -211,7 +211,9 @@ int subscriber_main(int argc, char *argv[])
         return -1;
     }
 
-    rttest_set_sched_priority(SCHED_RR, 97);
+    if (rttest_set_sched_priority(97, SCHED_RR) != 0) {
+      perror("Failed to set scheduling priority");
+    }
 
     if (rttest_lock_memory() != 0) {
       perror("Couldn't lock memory");
@@ -422,7 +424,9 @@ int publisher_main(int argc, char *argv[])
     /* Initialize random seed before entering the loop */
     // srand(time(NULL));
 
-    rttest_set_sched_priority(SCHED_RR, 98);
+    if (rttest_set_sched_priority(98, SCHED_RR) != 0) {
+      perror("Failed to set scheduling priority");
+    }
 
     if (rttest_lock_memory() != 0) {
       perror("Couldn't lock memory");

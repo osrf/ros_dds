@@ -30,7 +30,7 @@ void checkStatus(DDS::ReturnCode_t status, const char *info)
     if (status != DDS::RETCODE_OK && status != DDS::RETCODE_NO_DATA)
     {
         std::cerr << "Error in " << info << ": " << getErrorName(status) << std::endl;
-        //exit (1);
+        exit (1);
     }
 }
 

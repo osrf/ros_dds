@@ -17,7 +17,10 @@ int main(int argc, char *argv[])
 	sub->init();
 
 	rttest_read_args(argc, argv);
-	rttest_set_sched_priority(90, SCHED_RR);
+	if (rttest_set_sched_priority(90, SCHED_RR) != 0)
+  {
+    perror("Failed to set scheduling priority and policy of thread");
+  }
 
   size_t pool_size = 1024*1024*1024;
   size_t stack_size = sizeof(*sub) + 1024*1024;
