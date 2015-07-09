@@ -57,11 +57,13 @@ static int subscriber_shutdown(
        domain participant factory for people who want to release memory used
        by the participant factory. Uncomment the following block of code for
        clean destruction of the singleton. */
+    /*
     retcode = DDSDomainParticipantFactory::finalize_instance();
     if (retcode != DDS_RETCODE_OK) {
         printf("finalize_instance error %d\n", retcode);
         //status = -1;
     }
+    */
     return status;
 }
 
