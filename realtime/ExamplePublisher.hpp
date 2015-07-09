@@ -121,6 +121,10 @@ void ExamplePublisher::callback()
 {
 	this->msg.seq = this->i;
 	++i;
+  for (int j = 0; j < this->message_size; ++j)
+  {
+    this->msg.content[j] = i;
+  }
 
 	status = data_writer->write(msg, instance_handle);
 

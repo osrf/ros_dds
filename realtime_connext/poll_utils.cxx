@@ -22,7 +22,7 @@ struct PublisherNode
     poll *instance;
     DDS_InstanceHandle_t instance_handle;
     int count;
-    //std::string content;
+    unsigned int message_length;
 };
 
 struct Arguments
@@ -287,6 +287,9 @@ void *publisher_callback(void *args)
     /* TODO Modify the data to be written here */
     /* Set x to a random number between 0 and 9 */
     pub_node->instance->seq = (int)(rand()/(RAND_MAX/10.0));
+    for (int j = 0; j < pub_node->message_length; j++) {
+      pub_node->instance->content[j] = pub_node->count;
+    }
 
     DDS_ReturnCode_t retcode = pub_node->poll_writer->write(*pub_node->instance, pub_node->instance_handle);
     if (retcode != DDS_RETCODE_OK) {
@@ -420,6 +423,7 @@ int publisher_main(int argc, char *argv[])
     pub_node.instance_handle = instance_handle;
     pub_node.poll_writer = poll_writer;
     pub_node.count = 0;
+    pub_node.message_length = message_length;
 
     /* Initialize random seed before entering the loop */
     // srand(time(NULL));

@@ -18,6 +18,7 @@ class ExamplePublisher
     LargeMsg_LargeMessageDataWriter talker;
     LargeMsg_LargeMessage msg;
     DDS_ReturnCode_t status;
+    DDS_InstanceHandle_t userHandle;
 
 		int i;
 
@@ -181,6 +182,7 @@ bool ExamplePublisher::init()
 
   // register a chat message
 
+  userHandle = LargeMsg_LargeMessageDataWriter_register_instance(talker, &msg);
   printf("Created user handle and preallocated message.\n");
 	return true;
 }
@@ -192,12 +194,10 @@ void ExamplePublisher::callback()
   int j;
   for (j < 0; j < this->message_size; ++j)
   {
-    msg.content[j] = '.';
+    msg.content[j] = i;
   }
 
-  DDS_InstanceHandle_t userHandle = LargeMsg_LargeMessageDataWriter_register_instance(talker, &msg);
   status = LargeMsg_LargeMessageDataWriter_write(talker, &msg, userHandle);
-  //LargeMsg_LargeMessageDataWriter_unregister_instance(talker, msg, userHandle );
   checkStatus(status, "LargeMsg_LargeMessageDataWriter_write");
   ++i;
 }
