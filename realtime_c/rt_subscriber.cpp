@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     perror("Failed to lock memory");
   }
 
-	//rttest_prefault_stack_size(STACK_SIZE);
+	rttest_prefault_stack();
 
 	rttest_spin(sub_callback, NULL);
 

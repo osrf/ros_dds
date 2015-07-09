@@ -42,8 +42,6 @@ int main(int argc, char *argv[])
   }
 	rttest_read_args(argc, argv);
 
-  //getchar();
-
   pub = new ExamplePublisher;
   pub->message_size = message_length;
 
@@ -60,9 +58,7 @@ int main(int argc, char *argv[])
     perror("Failed to lock dynamic memory");
   }
 
-  //rttest_prefault_stack_size(stack_size);
-
-  //clock_nanosleep(0, 0, &t, 0);
+  rttest_prefault_stack();
 
 	rttest_spin(pub_callback, NULL);
 

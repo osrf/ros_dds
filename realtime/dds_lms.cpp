@@ -24,15 +24,12 @@ int main(int argc, char *argv[])
 
   size_t pool_size = 1024*1024*1024;
   size_t stack_size = sizeof(*sub) + 1024*1024;
-  /*
-  getchar();
-	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+	if (rttest_lock_memory() != 0)
   {
     perror("Failed to lock memory");
   }
-  */
 
-	rttest_prefault_stack_size(stack_size);
+	rttest_prefault_stack();
 
 	rttest_spin(sub_callback, NULL);
 

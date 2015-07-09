@@ -107,14 +107,12 @@ int main(int argc, char *argv[])
 	pub->init();
   sub = new ExampleSubscriber();
 	sub->init();
-  size_t stack_size = message_length*2 + sizeof(*pub) + sizeof(*sub);
-  size_t pool_size = 2*message_length;
 
-	if (rttest_lock_and_prefault_dynamic(pool_size) != 0)
+	if (rttest_lock_memory() != 0)
   {
     perror("Failed to lock dynamic memory");
   }
-	rttest_prefault_stack_size(stack_size);
+	rttest_prefault_stack();
 
   start_rt_thread(&subscriber_thread);
 

@@ -4,11 +4,8 @@ set (CMAKE_CXX_FLAGS "-std=c++11")
 
 find_package(rttest REQUIRED)
 
-#include(ExamplePublisher.hpp ExampleSubscriber.hpp)
-
 link_directories(${rttest_LIBRARY_DIR})
 include_directories(${rttest_INCLUDE_DIRS})
-
 
 find_package(opensplice REQUIRED)
 include_directories(${OPENSPLICE_INCLUDE_DIRS})
@@ -20,9 +17,6 @@ target_link_libraries(dds_lms ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
 
 add_executable(dds_lmp dds_lmp.cpp)
 target_link_libraries(dds_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
-
-#add_executable(dds_unsafe_lmp dds_unsafe_lmp.cpp)
-#target_link_libraries(dds_unsafe_lmp ${OPENSPLICE_LIBRARIES} ${rttest_LIBRARIES})
 
 find_package(Threads)
 if(NOT Threads_FOUND)

@@ -218,6 +218,7 @@ int subscriber_main(int argc, char *argv[])
     if (rttest_lock_memory() != 0) {
       perror("Couldn't lock memory");
     }
+    rttest_prefault_stack();
 
     /* Main loop */
     // TODO rttest_spin here
@@ -435,6 +436,8 @@ int publisher_main(int argc, char *argv[])
     if (rttest_lock_memory() != 0) {
       perror("Couldn't lock memory");
     }
+    rttest_prefault_stack();
+
     rttest_spin(publisher_callback, static_cast<void*>(&pub_node));
     rttest_write_results_file("rttest_publisher_results");
     rttest_finish();

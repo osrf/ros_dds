@@ -11,7 +11,7 @@ add_definitions(${nddscpp_DEFINITIONS})
 link_directories(${rttest_LIBRARY_DIR})
 include_directories(${rttest_INCLUDE_DIRS} ${nddscpp_INCLUDE_DIRS})
 
-set(CMAKE_CXX_FLAGS ${rttest_FLAGS})
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 add_library(poll_msg poll.cxx pollPlugin.cxx pollSupport.cxx)
 target_link_libraries(poll_msg ${nddscpp_LIBRARIES})
