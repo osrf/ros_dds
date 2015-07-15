@@ -3,19 +3,51 @@
 #include "Chat.h"
 #include "unistd.h"
 
-#define MAX_MSG_LEN 128
+#include <rttest/rttest.h>
+
+#define MAX_MSG_LEN 16777216
+
+int i = 0;
+Chat_ChatMessageDataWriter talker;
+Chat_ChatMessage *msg;
+DDS_ReturnCode_t status;
+DDS_InstanceHandle_t userHandle;
+char *msg_content;
+
+void* callback(void* unused)
+{
+  msg->index = i;
+  snprintf(msg->content, MAX_MSG_LEN, msg_content, msg->index);
+  status = Chat_ChatMessageDataWriter_write(talker, msg, userHandle);
+  // checkStatus(status, "Chat_ChatMessageDataWriter_write");
+  ++i;
+}
 
 int main (
   int argc,
   char *argv[])
 {
+  // begin init
+
   DDS_DomainParticipantFactory dpf;
   DDS_DomainParticipant dp;
   DDS_DomainId_t domain = DDS_DOMAIN_ID_DEFAULT;
-  DDS_ReturnCode_t status;
   Chat_ChatMessageTypeSupport chatMessageTS;
   DDS_Topic chatMessageTopic;
   char *chatMessageTypeName;
+
+  DDS_PublisherQos *pub_qos;
+  DDS_DataWriterQos *dw_qos;
+  DDS_Publisher chatPublisher;
+  Chat_NameServiceDataWriter nameServer;
+  char *partitionName = NULL;
+
+  DDS_Topic nameServiceTopic;
+
+  int ownID;
+
+  Chat_NameService ns;
+
 
   /* Create a DomainParticipantFactory and a DomainParticipant */
   /* (using Default QoS settings). */
@@ -67,15 +99,6 @@ int main (
     exit(-1);
   };
   printf("Created ChatMessage topic.\n");
-
-  DDS_PublisherQos *pub_qos;
-  DDS_DataWriterQos *dw_qos;
-  DDS_Publisher chatPublisher;
-  Chat_ChatMessageDataWriter talker;
-  Chat_NameServiceDataWriter nameServer;
-  char *partitionName = NULL;
-
-  DDS_Topic nameServiceTopic;
 
   /* Adapt the default PublisherQos to write into the
      "ChatRoom" Partition. */
@@ -129,10 +152,8 @@ int main (
   }
   printf("Created datawriter.\n");
 
-  // Initialize message
-  int ownID = 0;
+  ownID = 0;
 
-  Chat_ChatMessage *msg;
   msg = Chat_ChatMessage__alloc();
   //checkHandle(msg, "Chat_ChatMessage__alolc");
   msg->userID = ownID;
@@ -142,42 +163,37 @@ int main (
   snprintf(msg->content, MAX_MSG_LEN, "hello world");
 
   // register a chat message
-  DDS_InstanceHandle_t userHandle;
   userHandle = Chat_ChatMessageDataWriter_register_instance(talker, msg);
 
-  Chat_NameService ns;
   ns.userID = ownID;
   ns.name = DDS_string_alloc(Chat_MAX_NAME+1);
   //checkHandle(ns.name, "DDS_string_alloc");
   char *chatterName;
-  if (chatterName) {
-    strncpy(ns.name, chatterName, Chat_MAX_NAME + 1);
-  }
-  else {
-    snprintf(ns.name, Chat_MAX_NAME+1, "Chatter %d", ownID);
+  snprintf(ns.name, Chat_MAX_NAME+1, "Chatter %d", ownID);
+
+  int j;
+  msg_content = (char*) malloc(MAX_MSG_LEN);
+  for (j < 0; j < MAX_MSG_LEN; ++j)
+  {
+    msg_content[j] = '.';
   }
 
   // Write user information
   status = Chat_NameServiceDataWriter_write(nameServer, &ns, DDS_HANDLE_NIL);
   //checkStatus(status, "Chat_ChatMessageDataWriter_write");
 
-  // Write a message
-  status = Chat_ChatMessageDataWriter_write(talker, msg, userHandle);
-  // checkStatus(status, "Chat_ChatMessageDataWriter_write");
+  printf("Created user handle and preallocated message.\n");
 
-  // pause
-  sleep(1);
+  // end init
 
-  int i = 0;
-  for (i = 1; i < 6; ++i)
-  {
-    msg->index = i;
-    snprintf(msg->content, MAX_MSG_LEN, "Message number: %d", msg->index);
-    status = Chat_ChatMessageDataWriter_write(talker, msg, userHandle);
-    // checkStatus(status, "Chat_ChatMessageDataWriter_write");
-    sleep(1);
-  }
+  rttest_read_args(argc, argv);
+  rttest_set_sched_priority(90, SCHED_RR);
 
+  rttest_spin(callback, NULL);
+  rttest_write_results();
+  rttest_finish();
+
+  // begin teardown
 
   /* Remove the DataWriters */
   status = DDS_Publisher_delete_datawriter(chatPublisher,
@@ -187,13 +203,6 @@ int main (
     exit(-1);
   }
   printf("Deleted datawriter.\n");
-  /*status = DDS_Publisher_delete_datawriter(
-    chatPublisher, nameServer);
-  if (status != DDS_RETCODE_OK) {
-    printf("Deleting datawriter (NameService) failed!!\n");
-    exit(-1);
-  }
-  printf("Deleted datawriter (NameService).\n");*/
 
   /* Remove the Publisher. */
   status = DDS_DomainParticipant_delete_publisher(
