@@ -128,7 +128,7 @@ int subscriber_main(int argc, char *argv[])
     DDS_Duration_t receive_period = {5,0};
     int status = 0;
 
-    /* To customize the participant QoS, use 
+    /* To customize the participant QoS, use
        the configuration file USER_QOS_PROFILES.xml */
     participant = DDSTheParticipantFactory->create_participant(
         domainId, DDS_PARTICIPANT_QOS_DEFAULT,
@@ -139,7 +139,7 @@ int subscriber_main(int argc, char *argv[])
         return -1;
     }
 
-    /* To customize the subscriber QoS, use 
+    /* To customize the subscriber QoS, use
        the configuration file USER_QOS_PROFILES.xml */
     subscriber = participant->create_subscriber(
         DDS_SUBSCRIBER_QOS_DEFAULT, NULL /* listener */, DDS_STATUS_MASK_NONE);
@@ -240,8 +240,8 @@ int subscriber_main(Arguments *args)
 void *subscriber_main(void *args)
 {
     Arguments *new_args = static_cast<Arguments*>(args);
-    int ret = subscriber_main(new_args);
-    return static_cast<void*>(&ret);
+    subscriber_main(new_args);
+    return NULL;
 }
 
 /* Delete all entities */
@@ -283,7 +283,7 @@ void *publisher_callback(void *args)
     PublisherNode *pub_node = static_cast<PublisherNode*>(args);
     // message instance, instance_handle, poll_writer
     /* Set x to a random number between 0 and 9 */
-    pub_node->instance->seq = (int)(rand()/(RAND_MAX/10.0));
+    pub_node->instance->seq = pub_node->count;
     for (int j = 0; j < pub_node->message_length; j++) {
       pub_node->instance->content[j] = pub_node->count;
     }
