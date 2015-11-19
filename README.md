@@ -1,3 +1,7 @@
+# Deprecated
+
+This was an early prototype and is no longer in development. Current work is being done at https://github.com/ros2/ros2
+
 # ros_dds
 
 Prototype system using DDS as the middleware for a ROS like API.
