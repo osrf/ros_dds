@@ -9,8 +9,8 @@
 using namespace rclcpp::node;
 using namespace rclcpp::publisher;
 
-Node::Node(std::string name)
-: running_(true)
+Node::Node(std::string name, subscription::SubscriptionManager::Ptr subscription_manager)
+: running_(true), subscription_manager_(subscription_manager)
 {
     this->nodes_.push_back(this);
     this->subscription_iterator_ = this->subscriptions_.end();

@@ -8,6 +8,7 @@
 #include <genidlcpp/resolver.h>
 
 #include <rclcpp/impl/check_status.hpp>
+#include <rclcpp/subscription/subscription.hpp>
 
 namespace rclcpp
 {
@@ -29,7 +30,7 @@ class DuplicatePublisherException : public std::exception
 class PublisherInterface
 {
 public:
-	typedef std::shared_ptr<PublisherInterface> Ptr;
+    typedef std::shared_ptr<PublisherInterface> Ptr;
     virtual std::string get_topic_name() = 0;
 
 };
@@ -38,14 +39,16 @@ template <typename ROSMsgType>
 class Publisher : public PublisherInterface
 {
     typedef dds_impl::DDSTypeResolver<ROSMsgType> r;
+
     friend class node::Node;
     Publisher(std::string topic_name, size_t queue_size,
               DDS::Publisher_var dds_publisher,
               DDS::Topic_var dds_topic,
-              DDS::DataWriter_var dds_topic_datawriter)
+              DDS::DataWriter_var dds_topic_datawriter,
+              subscription::SubscriptionManager::Ptr subscription_manager)
     : topic_name_(topic_name), queue_size_(queue_size),
       dds_publisher_(dds_publisher), dds_topic_(dds_topic),
-      dds_topic_datawriter_(dds_topic_datawriter)
+      dds_topic_datawriter_(dds_topic_datawriter), subscription_manager_(subscription_manager)
     {
         this->data_writer_ = r::DDSMsgDataWriterType::_narrow(this->dds_topic_datawriter_.in());
         checkHandle(this->data_writer_, "DDSMsgDataWriter_t::_narrow");
@@ -63,6 +66,11 @@ public:
         DDS::InstanceHandle_t instance_handle = this->data_writer_->register_instance(dds_msg);
         DDS::ReturnCode_t status = this->data_writer_->write(dds_msg, instance_handle);
         checkStatus(status, "DDSMsgDataWriter_t::write");
+    }
+
+    void publish(typename ROSMsgType::Ptr msg)
+    {
+        this->subscription_manager_->template consume<ROSMsgType>(this->topic_name_, msg);
     }
 
     void publish(typename ROSMsgType::ConstPtr msg)
@@ -84,6 +92,8 @@ private:
     DDS::DataWriter_var dds_topic_datawriter_;
 
     typename r::DDSMsgDataWriterType_var data_writer_;
+
+    subscription::SubscriptionManager::Ptr subscription_manager_;
 };
 
 }
